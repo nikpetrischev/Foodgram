@@ -4,6 +4,7 @@ import webcolors
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
+from django.core import exceptions
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 
@@ -39,8 +40,7 @@ class Base64ImageField(serializers.ImageField):
         if isinstance(data, str) and data.startswith('data:image'):
             format, imgstr = data.split(';base64,')
             ext = format.split('/')[-1]
-
-            data = ContentFile(base64.b16decode(imgstr), name='temp.' + ext)
+            data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
 
         return super().to_internal_value(data)
 
@@ -122,15 +122,19 @@ class RecipeReadSerializer(RecipeSerializer):
         )
 
     def get_is_favorited(self, obj):
-        if (request := self.context.get('request')) is None:
+        # try/except block used because if any of user and/or user_recipe
+        # would raise any exception then it means we either don't have any
+        # m2m links between current user and recipe or user is unauthorized.
+        try:
+            user = self.context.get('request').user
+            user_recipe = UserRecipe.objects.get(
+                recipe=obj.id,
+                user=user.id,
+            )
+        except Exception:
             return False
-        current_user = request.user
-        if isinstance(current_user, AnonymousUser):
-            return False
-        return UserRecipe.objects.filter(
-            recipe=obj.id,
-            user=current_user.id,
-        ).exists()
+        else:
+            return user_recipe.is_favorited
 
     # def get_is_in_shopping_cart(self, obj):
     #     ...

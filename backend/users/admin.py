@@ -24,5 +24,7 @@ class UserAdmin(admin.ModelAdmin):
             'fields': ['email', 'password'],
         }],
     ]
-    inlines = [RecipeInline, SubscriptionInline]
+    inlines = [
+        RecipeInline,
+        SubscriptionInline]
     exclude = ['favourites', 'subscriptions']

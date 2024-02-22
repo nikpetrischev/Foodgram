@@ -136,6 +136,14 @@ class UserRecipe(models.Model):
         on_delete=models.CASCADE,
         verbose_name='Рецепт',
     )
+    is_favorited = models.BooleanField(
+        verbose_name='В избранном',
+        default=False,
+    )
+    is_in_shopping_cart = models.BooleanField(
+        verbose_name='В корзине',
+        default=False,
+    )
     objects = models.Manager
 
     class Meta:

@@ -22,7 +22,7 @@ from .serializers import (
     TagSerializer,
     IngredientsReadSerializer
 )
-from users.serializers import UserSerializer, FavouritesSerializer
+from users.serializers import UserSerializer, FavouritesOrCartSerializer
 from .utils import RecipeFilter
 from recipes.models import (
     Recipe,
@@ -62,44 +62,49 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=[permissions.IsAuthenticated],
     )
     def favorite(self, request, *args, **kwargs):
+        recipe = get_object_or_404(
+            Recipe,
+            pk=kwargs.get('pk'),
+        )
+        user_recipe = UserRecipe.objects.filter(
+            recipe=kwargs.get('pk'),
+            user=request.user.id,
+        )
         if request.method in ['POST']:
-            recipe = get_object_or_404(
-                Recipe,
-                pk=kwargs.get('pk'),
-            )
-            if UserRecipe.objects.filter(
-                    user=request.user.id,
-                    recipe=recipe.id,
-            ).exists():
-                return Response(
-                    data={'errors': 'Рецепт уже в избранном'},
-                    status=HTTPStatus.BAD_REQUEST,
+            if not user_recipe:
+                serializer = FavouritesOrCartSerializer(
+                    data={
+                        'recipe': kwargs.get('pk'),
+                        'user': request.user.id,
+                        'is_favorited': True,
+                    },
                 )
-            serializer = FavouritesSerializer(
-                data={
-                    'recipe': recipe.id,
-                    'user': request.user.id,
-                },
-            )
+            else:
+                if user_recipe[0].is_favorited:
+                    return Response(
+                        data={'errors': 'Рецепт уже в избранном'},
+                        status=HTTPStatus.BAD_REQUEST,
+                    )
+                serializer = FavouritesOrCartSerializer(
+                    user_recipe[0],
+                    data={'is_favorited': True},
+                    partial=True,
+                )
             if serializer.is_valid():
                 serializer.save()
                 return Response(
-                    data={
-                        'id': recipe.id,
-                        'name': f'{recipe.name}',
-                        'image': f'{recipe.image}',
-                        'cooking_time': recipe.cooking_time,
-                    },
-                    status=HTTPStatus.CREATED,
-                )
+                            data={
+                                'id': recipe.id,
+                                'name': f'{recipe.name}',
+                                'image': f'{recipe.image}',
+                                'cooking_time': recipe.cooking_time,
+                            },
+                            status=HTTPStatus.CREATED,
+                        )
         elif request.method in ['DELETE']:
-            favourite = get_object_or_404(
-                UserRecipe,
-                recipe=kwargs.get('pk'),
-                user=request.user.id,
-            )
-            favourite.delete()
-            return Response(status=HTTPStatus.NO_CONTENT)
+            if user_recipe:
+                user_recipe.delete()
+                return Response(status=HTTPStatus.NO_CONTENT)
         return Response(status=HTTPStatus.BAD_REQUEST)
 
 

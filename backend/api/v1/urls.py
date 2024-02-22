@@ -30,11 +30,11 @@ router_v1.register(
     RecipeViewSet,
     basename='recipes',
 )
-router_v1.register(
-    r'recipes/(?P<id>\d+)',
-    RecipeViewSet,
-    basename='recipe',
-)
+# router_v1.register(
+#     r'user/(?P<id>\d+)/subscribe',
+#     ...,
+#     basename='subscribe',
+# )
 
 urlpatterns = [
     path('', include(router_v1.urls)),

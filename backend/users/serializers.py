@@ -16,7 +16,7 @@ class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     id = serializers.IntegerField(read_only=True)
     is_subscribed = serializers.SerializerMethodField(
-        read_only=True,
+        # read_only=True,
         required=False,
     )
 
@@ -39,8 +39,8 @@ class UserSerializer(serializers.ModelSerializer):
         if '/api/user/me/' in self.context.get('request').path:
             return False
         return Subscriptions.objects.filter(
-            subscriber=obj.id,
-            subscribe_to=current_user.id,
+            subscriber=current_user.id,
+            subscribe_to=obj.id,
         ).exists()
 
     @staticmethod
@@ -60,7 +60,7 @@ class UserSerializer(serializers.ModelSerializer):
     #     return super().save(**kwargs)
 
 
-class FavouritesSerializer(serializers.ModelSerializer):
+class FavouritesOrCartSerializer(serializers.ModelSerializer):
     recipe = serializers.PrimaryKeyRelatedField(
         queryset=Recipe.objects.all(),
         write_only=True,
@@ -69,10 +69,17 @@ class FavouritesSerializer(serializers.ModelSerializer):
         queryset=User.objects.all(),
         write_only=True,
     )
+    is_favorited = serializers.BooleanField(default=False)
+    is_in_shopping_cart = serializers.BooleanField(default=False)
 
     class Meta:
         model = UserRecipe
-        fields = ['recipe', 'user']
+        fields = [
+            'recipe',
+            'user',
+            'is_favorited',
+            'is_in_shopping_cart',
+        ]
 
 
 class ChangePasswordSerializer(serializers.Serializer):
