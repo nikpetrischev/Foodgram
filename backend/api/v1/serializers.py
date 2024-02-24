@@ -18,7 +18,6 @@ from recipes.models import (
     RecipeIngredient,
     UserRecipe,
 )
-from users.serializers import UserSerializer
 
 User = get_user_model()
 
@@ -43,6 +42,12 @@ class Base64ImageField(serializers.ImageField):
             data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
 
         return super().to_internal_value(data)
+
+
+class IngredientSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ingredient
+        fields = ('id', 'name', 'measurement_unit')
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -74,7 +79,7 @@ class IngredientsWriteSerializer(serializers.ModelSerializer):
         fields = ('id', 'amount')
 
 
-class RecipeSerializer(serializers.ModelSerializer):
+class AbstractRecipeSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField(
         method_name='get_image_url',
         read_only=True,
@@ -96,13 +101,25 @@ class RecipeSerializer(serializers.ModelSerializer):
         return None
 
 
-class RecipeReadSerializer(RecipeSerializer):
+class ShortenedRecipeSerializer(AbstractRecipeSerializer):
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
+        read_only_fields = ('id', 'name', 'image', 'cooking_time')
+        ordering = ['id']
+
+
+class RecipeReadSerializer(AbstractRecipeSerializer):
     tags = TagSerializer(many=True)
     ingredients = IngredientsReadSerializer(
         source='recipe_with_ingredients',
         many=True,
     )
     is_favorited = serializers.SerializerMethodField(
+        required=False,
+        read_only=True,
+    )
+    is_in_shopping_cart = serializers.SerializerMethodField(
         required=False,
         read_only=True,
     )
@@ -118,7 +135,7 @@ class RecipeReadSerializer(RecipeSerializer):
             'ingredients',
             'cooking_time',
             'is_favorited',
-            # 'is_in_shopping_cart',
+            'is_in_shopping_cart',
         )
 
     def get_is_favorited(self, obj):
@@ -136,11 +153,20 @@ class RecipeReadSerializer(RecipeSerializer):
         else:
             return user_recipe.is_favorited
 
-    # def get_is_in_shopping_cart(self, obj):
-    #     ...
+    def get_is_in_shopping_cart(self, obj):
+        try:
+            user = self.context.get('request').user
+            user_recipe = UserRecipe.objects.get(
+                recipe=obj.id,
+                user=user.id,
+            )
+        except Exception:
+            return False
+        else:
+            return user_recipe.is_in_shopping_cart
 
 
-class RecipeWriteSerializer(RecipeSerializer):
+class RecipeWriteSerializer(AbstractRecipeSerializer):
     tags = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=Tag.objects.all(),

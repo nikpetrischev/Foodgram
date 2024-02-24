@@ -134,6 +134,7 @@ REST_FRAMEWORK = {
     ],
 
     'DEFAULT_PAGINATION_CLASS': 'api.v1.pagination.CustomPageNumberPagination',
+    'PAGE_SIZE': 10
 
 }
 

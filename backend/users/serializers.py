@@ -7,6 +7,7 @@ from rest_framework import serializers
 from rest_framework.validators import ValidationError
 
 from recipes.models import Recipe, UserRecipe
+from api.v1.serializers import ShortenedRecipeSerializer
 from .models import Subscriptions
 
 User = get_user_model()
@@ -15,10 +16,7 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     id = serializers.IntegerField(read_only=True)
-    is_subscribed = serializers.SerializerMethodField(
-        # read_only=True,
-        required=False,
-    )
+    is_subscribed = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = User
@@ -55,9 +53,41 @@ class UserSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
-    # def save(self, **kwargs):
-    #     self.validated_data.pop('is_subscribed')
-    #     return super().save(**kwargs)
+    def to_representation(self, obj):
+        representation = super(UserSerializer, self).to_representation(obj)
+        if (self.context['request'].method in ['POST']
+                and '/api/users/' in self.context['request'].path):
+            representation.pop('is_subscribed')
+        return representation
+
+
+class ExpandedUserSerializer(UserSerializer):
+    recipes = serializers.SerializerMethodField(read_only=True)
+    recipes_count = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = (
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'password',
+            'is_subscribed',
+            'recipes',
+            'recipes_count',
+        )
+
+    def get_recipes(self, obj):
+        query = Recipe.objects.filter(author=obj.id).order_by('id')
+        if recipes_limit := self.context.get('recipes_limit'):
+            query = query[:int(recipes_limit)]
+        serializer = ShortenedRecipeSerializer(query, many=True)
+        return serializer.data
+
+    def get_recipes_count(self, obj):
+        return obj.recipes.count()
 
 
 class FavouritesOrCartSerializer(serializers.ModelSerializer):
@@ -81,14 +111,14 @@ class FavouritesOrCartSerializer(serializers.ModelSerializer):
             'is_in_shopping_cart',
         ]
 
-
-class ChangePasswordSerializer(serializers.Serializer):
-    model = User
-
-    current_password = serializers.CharField(required=True)
-    new_password = serializers.CharField(required=True)
-
-    @staticmethod
-    def validate_new_password(value):
-        validate_password(value)
-        return value
+#cd pos
+# class ChangePasswordSerializer(serializers.Serializer):
+#     model = User
+#
+#     current_password = serializers.CharField(required=True)
+#     new_password = serializers.CharField(required=True)
+#
+#     @staticmethod
+#     def validate_new_password(value):
+#         validate_password(value)
+#         return value

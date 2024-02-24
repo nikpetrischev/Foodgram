@@ -1,5 +1,6 @@
 from http import HTTPStatus
 
+from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -8,20 +9,21 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
+from recipes.models import Recipe
 from .models import CustomUser, Subscriptions
 from .serializers import (
     UserSerializer,
-    ChangePasswordSerializer,
+    ExpandedUserSerializer,
 )
 
 
 class UserModelViewSet(ModelViewSet):
     model = CustomUser
+    queryset = CustomUser.objects.order_by('id')
     serializer_class = UserSerializer
     lookup_field = 'id'
     filter_backends = [filters.SearchFilter]
     search_fields = ['=username']
-    # http_method_names = ['get', 'post']
 
     def get_serializer(self, *args, **kwargs):
         serializer_class = self.get_serializer_class()
@@ -29,11 +31,6 @@ class UserModelViewSet(ModelViewSet):
         context['request'] = self.request
         kwargs.setdefault('context', context)
         return serializer_class(*args, **kwargs)
-
-    def get_queryset(self):
-        # TODO: Add all related queries.
-        queryset = CustomUser.objects.order_by('id')
-        return queryset
 
     @action(
         methods=['get'],
@@ -50,21 +47,22 @@ class UserModelViewSet(ModelViewSet):
         permission_classes=[permissions.IsAuthenticated],
     )
     def set_password(self, request):
-        user: CustomUser = request.user
-        serializer = ChangePasswordSerializer(data=request.data)
-
-        if serializer.is_valid():
-            current_password = serializer.data.get('current_password')
-            if current_password != user.password:
-                return Response(
-                    {'current_password': 'Wrong password'},
-                    status=HTTPStatus.BAD_REQUEST,
-                )
-            user.set_password(serializer.data.get('new_password'))
+        current_password = request.data.get('current_password')
+        new_password = request.data.get('new_password')
+        user = authenticate(
+            username=request.user.username,
+            password=current_password,
+        )
+        if user is not None:
+            user.set_password(new_password)
             user.save()
             return Response(status=HTTPStatus.NO_CONTENT)
+        return Response(
+            data={'error': 'Wrong password'},
+            status=HTTPStatus.BAD_REQUEST,
+        )
 
-        return Response(serializer.errors, status=HTTPStatus.BAD_REQUEST)
+
 
     @action(
         methods=['get'],
@@ -73,16 +71,18 @@ class UserModelViewSet(ModelViewSet):
     )
     def subscriptions(self, request):
         current_user = request.user
-        subscriptions = Subscriptions.objects.filter(
-            subscriber=current_user.id,
+        recipes_limit = request.query_params.get('recipes_limit')
+        subscriptions = current_user.subscriptions.all()
+        serializer = ExpandedUserSerializer(
+            subscriptions,
+            many=True,
+            context={
+                'request': request,
+                'recipes_limit': recipes_limit,
+            },
         )
-        data = []
-        for subscription in subscriptions:
-            subs_user = CustomUser.objects.get(pk=subscription.id)
-            data_dict = self.get_serializer(subs_user).data
-            data.append(data_dict)
 
-        return Response(data=data, status=HTTPStatus.OK)
+        return Response(data=serializer.data, status=HTTPStatus.OK)
 
     @action(
         methods=['post'],

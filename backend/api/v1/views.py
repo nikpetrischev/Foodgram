@@ -16,14 +16,14 @@ from rest_framework.mixins import (
 )
 
 from .serializers import (
-    RecipeSerializer,
+    AbstractRecipeSerializer,
     RecipeReadSerializer,
     RecipeWriteSerializer,
     TagSerializer,
-    IngredientsReadSerializer
+    IngredientSerializer
 )
 from users.serializers import UserSerializer, FavouritesOrCartSerializer
-from .utils import RecipeFilter
+from .utils import RecipeFilter, NameSearchFilter
 from recipes.models import (
     Recipe,
     Tag,
@@ -35,10 +35,10 @@ User = get_user_model()
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = IngredientsReadSerializer
+    serializer_class = IngredientSerializer
     queryset = Ingredient.objects.order_by('id')
-    filter_backends = [filters.SearchFilter]
-    search_field = ['name']
+    filter_backends = [drf_filters.DjangoFilterBackend]
+    filterset_class = NameSearchFilter
     pagination_class = None
     permission_classes = [permissions.AllowAny]
 
