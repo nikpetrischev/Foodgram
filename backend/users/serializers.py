@@ -7,7 +7,7 @@ from rest_framework import serializers
 from rest_framework.validators import ValidationError
 
 from recipes.models import Recipe, UserRecipe
-from api.v1.serializers import ShortenedRecipeSerializer
+
 from .models import Subscriptions
 
 User = get_user_model()
@@ -31,10 +31,12 @@ class UserSerializer(serializers.ModelSerializer):
         )
 
     def get_is_subscribed(self, obj):
-        current_user = self.context.get('request').user
+        if (request := self.context.get('request')) is None:
+            return False
+        current_user = request.user
         if isinstance(current_user, AnonymousUser):
             return False
-        if '/api/user/me/' in self.context.get('request').path:
+        if '/api/user/me/' in request.path:
             return False
         return Subscriptions.objects.filter(
             subscriber=current_user.id,
@@ -55,9 +57,10 @@ class UserSerializer(serializers.ModelSerializer):
 
     def to_representation(self, obj):
         representation = super(UserSerializer, self).to_representation(obj)
-        if (self.context['request'].method in ['POST']
-                and '/api/users/' in self.context['request'].path):
-            representation.pop('is_subscribed')
+        if (request := self.context.get('request')) is not None:
+            if (request.method in ['POST']
+                    and '/api/users/' in request.path):
+                representation.pop('is_subscribed')
         return representation
 
 
@@ -80,6 +83,9 @@ class ExpandedUserSerializer(UserSerializer):
         )
 
     def get_recipes(self, obj):
+        # Avoiding circular dependencies in DRF Serializers
+        from api.v1.serializers import ShortenedRecipeSerializer
+
         query = Recipe.objects.filter(author=obj.id).order_by('id')
         if recipes_limit := self.context.get('recipes_limit'):
             query = query[:int(recipes_limit)]

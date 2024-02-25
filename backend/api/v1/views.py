@@ -13,6 +13,8 @@ from rest_framework.response import Response
 from rest_framework.mixins import (
     CreateModelMixin,
     DestroyModelMixin,
+    ListModelMixin,
+    RetrieveModelMixin,
 )
 
 from .serializers import (
@@ -23,7 +25,8 @@ from .serializers import (
     IngredientSerializer
 )
 from users.serializers import UserSerializer, FavouritesOrCartSerializer
-from .utils import RecipeFilter, NameSearchFilter
+from .filters import RecipeFilter, NameSearchFilter
+from .mixins import PatchNotPutModelMixin
 from recipes.models import (
     Recipe,
     Tag,
@@ -43,7 +46,14 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.AllowAny]
 
 
-class RecipeViewSet(viewsets.ModelViewSet):
+class RecipeViewSet(
+    viewsets.GenericViewSet,
+    CreateModelMixin,
+    DestroyModelMixin,
+    ListModelMixin,
+    RetrieveModelMixin,
+    PatchNotPutModelMixin,
+):
     queryset = Recipe.objects.order_by('id')
     filter_backends = [drf_filters.DjangoFilterBackend]
     filterset_class = RecipeFilter
@@ -55,6 +65,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
 
     @action(
         methods=['post', 'delete'],

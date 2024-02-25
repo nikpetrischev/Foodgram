@@ -1,13 +1,10 @@
 from django_filters import rest_framework as drf_filters
-
-from rest_framework import filters
+from django_filters.fields import MultipleChoiceField
 
 from recipes.models import (
-    RecipeTag,
     Recipe,
     Ingredient,
 )
-from users.models import CustomUser
 
 
 FLAG_CHOICES = (
@@ -16,9 +13,19 @@ FLAG_CHOICES = (
 )
 
 
+class MultipleCharField(MultipleChoiceField):
+    def validate(self, value):
+        pass
+
+
+class MultipleCharFilter(drf_filters.MultipleChoiceFilter):
+    field_class = MultipleCharField
+
+
 class RecipeFilter(drf_filters.FilterSet):
-    author = drf_filters.NumberFilter(field_name='id')
-    tags = drf_filters.CharFilter(field_name='tags__slug')
+    author = drf_filters.NumberFilter(field_name='author__id')
+    # tags = drf_filters.CharFilter(field_name='tags__slug')
+    tags = MultipleCharFilter(field_name='tags__slug', lookup_expr='contains')
     is_favorited = drf_filters.ChoiceFilter(choices=FLAG_CHOICES)
     is_in_shopping_cart = drf_filters.ChoiceFilter(choices=FLAG_CHOICES)
 

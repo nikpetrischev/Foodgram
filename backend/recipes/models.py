@@ -51,8 +51,8 @@ class Recipe(NameAndStrAbstract):
         verbose_name='Автор рецепта',
     )
     image = models.ImageField(
-        null=True,
-        blank=True,
+        null=False,
+        blank=False,
         default=None,
         upload_to='recipes/images/',
         verbose_name='Иллюстрация',
@@ -102,6 +102,14 @@ class RecipeIngredient(models.Model):
         verbose_name='Количество',
     )
     objects = models.Manager()
+
+    class Meta:
+        constraints = (
+            models.UniqueConstraint(
+                fields=('recipe', 'ingredient'),
+                name='unique_recipe_ingredient',
+            ),
+        )
 
     def __str__(self):
         ingredient = Ingredient.objects.get(pk=self.ingredient.id)
