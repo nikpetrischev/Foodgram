@@ -103,14 +103,6 @@ class RecipeIngredient(models.Model):
     )
     objects = models.Manager()
 
-    class Meta:
-        constraints = (
-            models.UniqueConstraint(
-                fields=('recipe', 'ingredient'),
-                name='unique_recipe_ingredient',
-            ),
-        )
-
     def __str__(self):
         ingredient = Ingredient.objects.get(pk=self.ingredient.id)
         return (f'{ingredient.name}: '

@@ -43,8 +43,7 @@ class UserSerializer(serializers.ModelSerializer):
             subscribe_to=obj.id,
         ).exists()
 
-    @staticmethod
-    def validate_username(value):
+    def validate_username(self, value):
         if value == 'me':
             raise ValidationError('Unsupported username. Username cannot be \'me\'')
         return value
@@ -59,7 +58,7 @@ class UserSerializer(serializers.ModelSerializer):
         representation = super(UserSerializer, self).to_representation(obj)
         if (request := self.context.get('request')) is not None:
             if (request.method in ['POST']
-                    and '/api/users/' in request.path):
+                    and 'subscr' not in request.path):
                 representation.pop('is_subscribed')
         return representation
 

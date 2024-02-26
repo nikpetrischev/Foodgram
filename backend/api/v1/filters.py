@@ -24,7 +24,6 @@ class MultipleCharFilter(drf_filters.MultipleChoiceFilter):
 
 class RecipeFilter(drf_filters.FilterSet):
     author = drf_filters.NumberFilter(field_name='author__id')
-    # tags = drf_filters.CharFilter(field_name='tags__slug')
     tags = MultipleCharFilter(field_name='tags__slug', lookup_expr='contains')
     is_favorited = drf_filters.ChoiceFilter(choices=FLAG_CHOICES)
     is_in_shopping_cart = drf_filters.ChoiceFilter(choices=FLAG_CHOICES)
@@ -48,7 +47,3 @@ class NameSearchFilter(drf_filters.FilterSet):
     class Meta:
         model = Ingredient
         fields = ('name',)
-    # def get_search_fields(self, view, request):
-    #     if request.query_params.get('name'):
-    #         return ['^name']
-    #     return super().get_search_fields(view, request)

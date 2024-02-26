@@ -15,15 +15,21 @@ from .serializers import (
     UserSerializer,
     ExpandedUserSerializer,
 )
+from api.v1.pagination import CustomPageNumberPagination
 
 
 class UserModelViewSet(ModelViewSet):
     model = CustomUser
     queryset = CustomUser.objects.order_by('id')
-    serializer_class = UserSerializer
     lookup_field = 'id'
     filter_backends = [filters.SearchFilter]
     search_fields = ['=username']
+
+    def get_serializer_class(self):
+        if ('/subscriptions/' in self.request.path
+                or '/subscribe/' in self.request.path):
+            return ExpandedUserSerializer
+        return UserSerializer
 
     def get_serializer(self, *args, **kwargs):
         serializer_class = self.get_serializer_class()
@@ -62,8 +68,6 @@ class UserModelViewSet(ModelViewSet):
             status=HTTPStatus.BAD_REQUEST,
         )
 
-
-
     @action(
         methods=['get'],
         detail=False,
@@ -73,7 +77,28 @@ class UserModelViewSet(ModelViewSet):
         current_user = request.user
         recipes_limit = request.query_params.get('recipes_limit')
         subscriptions = current_user.subscriptions.all()
-        serializer = ExpandedUserSerializer(
+        # serializer = self.get_serializer(
+        #     subscriptions,
+        #     many=True,
+        #     context={
+        #         'request': request,
+        #         'recipes_limit': recipes_limit,
+        #     },
+        # )
+
+        page = self.paginate_queryset(subscriptions)
+        if page is not None:
+            serializer = self.get_serializer(
+                page,
+                many=True,
+                context={
+                    'request': request,
+                    'recipes_limit': recipes_limit,
+                },
+            )
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(
             subscriptions,
             many=True,
             context={
@@ -81,7 +106,6 @@ class UserModelViewSet(ModelViewSet):
                 'recipes_limit': recipes_limit,
             },
         )
-
         return Response(data=serializer.data, status=HTTPStatus.OK)
 
     @action(
@@ -90,7 +114,7 @@ class UserModelViewSet(ModelViewSet):
         permission_classes=[permissions.IsAuthenticated],
     )
     def subscribe(self, request, id=None):
-        if request.user.id == id:
+        if request.user.id == int(id):
             return Response(
                 data={'error':
                       f'Подписка на самого себя недопустима'},

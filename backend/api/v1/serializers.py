@@ -188,12 +188,6 @@ class RecipeWriteSerializer(AbstractRecipeSerializer):
             'ingredients',
             'cooking_time',
         )
-        # validators = (
-        #     serializers.UniqueTogetherValidator(
-        #         queryset=Recipe.objects.all(),
-        #         fields=('id', 'ingredients'),
-        #     ),
-        # )
 
     def save(self, **kwargs):
         if self.fields['author'] is None:
@@ -263,10 +257,10 @@ class RecipeWriteSerializer(AbstractRecipeSerializer):
                 'Поле \'Ингредиенты\' обязательно',
                 code=400,
             )
-        ingredients = Ingredient.objects.all()
+        ingredient_ids = []
         for ingredient in value:
             try:
-                current_ingredient = Ingredient.objects.get(
+                Ingredient.objects.get(
                     pk=ingredient['ingredient'],
                 )
             except exceptions.ObjectDoesNotExist:
@@ -279,4 +273,37 @@ class RecipeWriteSerializer(AbstractRecipeSerializer):
                     'Минимальное кол-во ингредиента - 1',
                     code=400,
                 )
+            if ingredient['ingredient'] in ingredient_ids:
+                raise serializers.ValidationError(
+                    'Повтор ингредиента',
+                    code=400,
+                )
+            else:
+                ingredient_ids.append(ingredient['ingredient'])
+        return value
+
+    def validate_tags(self, value):
+        if not value or value == []:
+            raise serializers.ValidationError(
+                'Поле \'Теги\' обязательно',
+                code=400,
+            )
+        tag_ids = []
+        for tag in value:
+            try:
+                Tag.objects.get(
+                    pk=tag.id,
+                )
+            except exceptions.ObjectDoesNotExist:
+                raise serializers.ValidationError(
+                    'Тег не найден в базе',
+                    code=400,
+                )
+            if tag.id in tag_ids:
+                raise serializers.ValidationError(
+                    'Повтор тега',
+                    code=400,
+                )
+            else:
+                tag_ids.append(tag.id)
         return value

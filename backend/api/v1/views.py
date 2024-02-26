@@ -27,6 +27,7 @@ from .serializers import (
 from users.serializers import UserSerializer, FavouritesOrCartSerializer
 from .filters import RecipeFilter, NameSearchFilter
 from .mixins import PatchNotPutModelMixin
+from .permissions import RecipePermission
 from recipes.models import (
     Recipe,
     Tag,
@@ -57,6 +58,7 @@ class RecipeViewSet(
     queryset = Recipe.objects.order_by('id')
     filter_backends = [drf_filters.DjangoFilterBackend]
     filterset_class = RecipeFilter
+    permission_classes = [RecipePermission]
 
     def get_serializer_class(self):
         if self.request.method in ['GET']:
@@ -66,17 +68,19 @@ class RecipeViewSet(
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-
     @action(
         methods=['post', 'delete'],
         detail=True,
         permission_classes=[permissions.IsAuthenticated],
     )
     def favorite(self, request, *args, **kwargs):
-        recipe = get_object_or_404(
-            Recipe,
-            pk=kwargs.get('pk'),
-        )
+        recipes = Recipe.objects.filter(pk=kwargs.get('pk'))
+        if recipes.count() == 0:
+            return Response(
+                f'Рецепт с id {self.kwargs.get("id")} не найден',
+                status=HTTPStatus.BAD_REQUEST,
+            )
+        recipe = recipes.first()
         user_recipe = UserRecipe.objects.filter(
             recipe=kwargs.get('pk'),
             user=request.user.id,
