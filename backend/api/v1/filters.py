@@ -25,8 +25,14 @@ class MultipleCharFilter(drf_filters.MultipleChoiceFilter):
 class RecipeFilter(drf_filters.FilterSet):
     author = drf_filters.NumberFilter(field_name='author__id')
     tags = MultipleCharFilter(field_name='tags__slug', lookup_expr='contains')
-    is_favorited = drf_filters.ChoiceFilter(choices=FLAG_CHOICES)
-    is_in_shopping_cart = drf_filters.ChoiceFilter(choices=FLAG_CHOICES)
+    is_favorited = drf_filters.ChoiceFilter(
+        field_name='userrecipe__is_favorited',
+        choices=FLAG_CHOICES,
+    )
+    is_in_shopping_cart = drf_filters.ChoiceFilter(
+        field_name='userrecipe__is_in_shopping_cart',
+        choices=FLAG_CHOICES,
+    )
 
     class Meta:
         models = Recipe

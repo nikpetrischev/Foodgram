@@ -1,13 +1,16 @@
-from enum import Enum
 from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AnonymousUser
-from django.db.models import Count, Q
-from django.shortcuts import get_object_or_404
+from django.db.models import Sum
+
 from django_filters import rest_framework as drf_filters
 
-from rest_framework import filters, viewsets, permissions
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import cm
+from reportlab.platypus import Paragraph, SimpleDocTemplate
+from reportlab.platypus.tables import Table
+
+from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.mixins import (
@@ -18,13 +21,13 @@ from rest_framework.mixins import (
 )
 
 from .serializers import (
-    AbstractRecipeSerializer,
     RecipeReadSerializer,
     RecipeWriteSerializer,
+    ShortenedRecipeSerializer,
     TagSerializer,
     IngredientSerializer
 )
-from users.serializers import UserSerializer, FavouritesOrCartSerializer
+from users.serializers import FavouritesOrCartSerializer
 from .filters import RecipeFilter, NameSearchFilter
 from .mixins import PatchNotPutModelMixin
 from .permissions import RecipePermission
@@ -33,6 +36,7 @@ from recipes.models import (
     Tag,
     Ingredient,
     UserRecipe,
+    RecipeIngredient,
 )
 
 User = get_user_model()
@@ -69,58 +73,202 @@ class RecipeViewSet(
         serializer.save(author=self.request.user)
 
     @action(
-        methods=['post', 'delete'],
+        methods=['post'],
         detail=True,
         permission_classes=[permissions.IsAuthenticated],
     )
-    def favorite(self, request, *args, **kwargs):
-        recipes = Recipe.objects.filter(pk=kwargs.get('pk'))
-        if recipes.count() == 0:
+    def favorite(self, request, pk=None):
+        recipe = Recipe.objects.filter(pk=pk).first()
+        if not recipe:
             return Response(
-                f'Рецепт с id {self.kwargs.get("id")} не найден',
+                {'errors': 'Рецепт не найден'},
                 status=HTTPStatus.BAD_REQUEST,
             )
-        recipe = recipes.first()
-        user_recipe = UserRecipe.objects.filter(
-            recipe=kwargs.get('pk'),
-            user=request.user.id,
+        favorite_item, _ = UserRecipe.objects.get_or_create(
+            user=request.user,
+            recipe=recipe,
         )
-        if request.method in ['POST']:
-            if not user_recipe:
-                serializer = FavouritesOrCartSerializer(
-                    data={
-                        'recipe': kwargs.get('pk'),
-                        'user': request.user.id,
-                        'is_favorited': True,
-                    },
-                )
-            else:
-                if user_recipe[0].is_favorited:
-                    return Response(
-                        data={'errors': 'Рецепт уже в избранном'},
-                        status=HTTPStatus.BAD_REQUEST,
-                    )
-                serializer = FavouritesOrCartSerializer(
-                    user_recipe[0],
-                    data={'is_favorited': True},
-                    partial=True,
-                )
-            if serializer.is_valid():
-                serializer.save()
-                return Response(
-                            data={
-                                'id': recipe.id,
-                                'name': f'{recipe.name}',
-                                'image': f'{recipe.image}',
-                                'cooking_time': recipe.cooking_time,
-                            },
-                            status=HTTPStatus.CREATED,
-                        )
-        elif request.method in ['DELETE']:
-            if user_recipe:
-                user_recipe.delete()
-                return Response(status=HTTPStatus.NO_CONTENT)
-        return Response(status=HTTPStatus.BAD_REQUEST)
+        if favorite_item.is_favorited:
+            return Response(
+                {'errors': f'"{recipe.name}" уже в избранном'},
+                status=HTTPStatus.BAD_REQUEST,
+            )
+        serializer = FavouritesOrCartSerializer(
+            favorite_item,
+            data={'is_favorited': True},
+            partial=True,
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                ShortenedRecipeSerializer(recipe).data,
+                status=HTTPStatus.CREATED,
+            )
+        return Response(
+            serializer.errors,
+            status=HTTPStatus.BAD_REQUEST,
+        )
+
+    @favorite.mapping.delete
+    def favorite_delete(self, request, pk=None):
+        recipe = Recipe.objects.filter(pk=pk).first()
+        if not recipe:
+            return Response(
+                {'errors': 'Рецепт не найден'},
+                status=HTTPStatus.NOT_FOUND,
+            )
+
+        favorite_item = UserRecipe.objects.filter(
+            user=request.user,
+            recipe=recipe,
+            is_favorited=True,
+        ).first()
+        if not favorite_item:
+            return Response(
+                {'errors': f'"{recipe.name}" нет в избранном'},
+                status=HTTPStatus.BAD_REQUEST,
+            )
+
+        serializer = FavouritesOrCartSerializer(
+            favorite_item,
+            data={'is_favorited': False},
+            partial=True,
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(status=HTTPStatus.NO_CONTENT)
+
+        return Response(
+            serializer.errors,
+            status=HTTPStatus.BAD_REQUEST,
+        )
+
+    @staticmethod
+    def create_pdf(cart_data):
+        response = Response(content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename=shopping_cart.pdf'
+
+        elements = []
+
+        doc = SimpleDocTemplate(response, rightMargin=0, leftMargin=6.5 * cm, topMargin=0.3 * cm, bottomMargin=0)
+
+        styles = getSampleStyleSheet()
+
+        paragraph = Paragraph('Покупки', styles['Title'])
+
+        elements.append(paragraph)
+
+        cart_list = [('Продукт', 'Ед.изм.', 'Кол-во')]
+        for item in cart_data:
+            cart_list.append(
+                (
+                    item['ingredient__name'],
+                    item['ingredient__measurement_unit'],
+                    item['total'],
+                ),
+            )
+        table = Table(cart_list)
+
+        elements.append(table)
+        doc.build(elements)
+
+        return response
+
+    @action(
+        methods=['get'],
+        detail=False,
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def download_shopping_cart(self, request):
+        recipes = Recipe.objects.filter(
+            userrecipe__user=request.user,
+            userrecipe__is_in_shopping_cart=True,
+        )
+        ingredients = (
+            RecipeIngredient.objects.filter(recipe__in=recipes)
+            .annotate(total=Sum('amount'))
+            .values(
+                'ingredient__name',
+                'total',
+                'ingredient__measurement_unit',
+            )
+        )
+
+        return self.create_pdf(ingredients)
+
+    @action(
+        methods=['post'],
+        detail=True,
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def shopping_cart(self, request, pk=None):
+        recipe = Recipe.objects.filter(pk=pk).first()
+        if not recipe:
+            return Response(
+                {'errors': 'Рецепт не найден'},
+                status=HTTPStatus.BAD_REQUEST,
+            )
+
+        cart_item, _ = UserRecipe.objects.get_or_create(
+            user=request.user,
+            recipe=recipe,
+        )
+        if cart_item.is_in_shopping_cart:
+            return Response(
+                {'errors': f'"{recipe.name}" уже в корзине'},
+                status=HTTPStatus.BAD_REQUEST,
+            )
+
+        serializer = FavouritesOrCartSerializer(
+            cart_item,
+            data={'is_in_shopping_cart': True},
+            partial=True,
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                ShortenedRecipeSerializer(recipe).data,
+                status=HTTPStatus.CREATED,
+            )
+
+        return Response(
+            serializer.errors,
+            status=HTTPStatus.BAD_REQUEST,
+        )
+
+    @shopping_cart.mapping.delete
+    def shopping_cart_delete(self, request, pk=None):
+        recipe = Recipe.objects.filter(pk=pk).first()
+        if not recipe:
+            return Response(
+                {'errors': 'Рецепт не найден'},
+                status=HTTPStatus.NOT_FOUND,
+            )
+
+        cart_item = UserRecipe.objects.filter(
+            user=request.user,
+            recipe=recipe,
+            is_in_shopping_cart=True,
+        ).first()
+        if not cart_item:
+            return Response(
+                {'errors': f'"{recipe.name}" нет в корзине'},
+                status=HTTPStatus.BAD_REQUEST,
+            )
+
+        serializer = FavouritesOrCartSerializer(
+            cart_item,
+            data={'is_in_shopping_cart': False},
+            partial=True,
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(status=HTTPStatus.NO_CONTENT)
+
+        return Response(
+            serializer.errors,
+            status=HTTPStatus.BAD_REQUEST,
+        )
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):

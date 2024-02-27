@@ -9,13 +9,11 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from recipes.models import Recipe
 from .models import CustomUser, Subscriptions
 from .serializers import (
     UserSerializer,
     ExpandedUserSerializer,
 )
-from api.v1.pagination import CustomPageNumberPagination
 
 
 class UserModelViewSet(ModelViewSet):
@@ -74,17 +72,8 @@ class UserModelViewSet(ModelViewSet):
         permission_classes=[permissions.IsAuthenticated],
     )
     def subscriptions(self, request):
-        current_user = request.user
         recipes_limit = request.query_params.get('recipes_limit')
-        subscriptions = current_user.subscriptions.all()
-        # serializer = self.get_serializer(
-        #     subscriptions,
-        #     many=True,
-        #     context={
-        #         'request': request,
-        #         'recipes_limit': recipes_limit,
-        #     },
-        # )
+        subscriptions = request.user.subscriptions.all()
 
         page = self.paginate_queryset(subscriptions)
         if page is not None:
@@ -131,8 +120,13 @@ class UserModelViewSet(ModelViewSet):
                       f'Подписка на {subs_user.username} уже оформлена'},
                 status=HTTPStatus.BAD_REQUEST,
             )
+        recipes_limit = request.query_params.get('recipes_limit')
+        context = {
+            'request': request,
+            'recipes_limit': recipes_limit,
+        }
         return Response(
-            data=self.get_serializer(subs_user).data,
+            data=self.get_serializer(subs_user, context=context).data,
             status=HTTPStatus.CREATED,
         )
 

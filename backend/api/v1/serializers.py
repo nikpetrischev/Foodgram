@@ -3,7 +3,6 @@ import base64
 import webcolors
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AnonymousUser
 from django.core import exceptions
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
@@ -91,7 +90,8 @@ class AbstractRecipeSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = '__all__'
 
-    def get_image_url(self, obj):
+    @staticmethod
+    def get_image_url(obj):
         if obj.image:
             return obj.image.url
         return None
@@ -251,7 +251,8 @@ class RecipeWriteSerializer(AbstractRecipeSerializer):
     def to_representation(self, instance):
         return RecipeReadSerializer(instance).data
 
-    def validate_ingredients(self, value):
+    @staticmethod
+    def validate_ingredients(value):
         if not value or value == []:
             raise serializers.ValidationError(
                 'Поле \'Ингредиенты\' обязательно',
@@ -282,7 +283,8 @@ class RecipeWriteSerializer(AbstractRecipeSerializer):
                 ingredient_ids.append(ingredient['ingredient'])
         return value
 
-    def validate_tags(self, value):
+    @staticmethod
+    def validate_tags(value):
         if not value or value == []:
             raise serializers.ValidationError(
                 'Поле \'Теги\' обязательно',

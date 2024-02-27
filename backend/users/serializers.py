@@ -1,7 +1,5 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
-from django.contrib.auth.password_validation import validate_password
-from django.shortcuts import get_object_or_404
 
 from rest_framework import serializers
 from rest_framework.validators import ValidationError
@@ -43,7 +41,8 @@ class UserSerializer(serializers.ModelSerializer):
             subscribe_to=obj.id,
         ).exists()
 
-    def validate_username(self, value):
+    @staticmethod
+    def validate_username(value):
         if value == 'me':
             raise ValidationError('Unsupported username. Username cannot be \'me\'')
         return value
@@ -91,7 +90,8 @@ class ExpandedUserSerializer(UserSerializer):
         serializer = ShortenedRecipeSerializer(query, many=True)
         return serializer.data
 
-    def get_recipes_count(self, obj):
+    @staticmethod
+    def get_recipes_count(obj):
         return obj.recipes.count()
 
 
@@ -115,15 +115,3 @@ class FavouritesOrCartSerializer(serializers.ModelSerializer):
             'is_favorited',
             'is_in_shopping_cart',
         ]
-
-#cd pos
-# class ChangePasswordSerializer(serializers.Serializer):
-#     model = User
-#
-#     current_password = serializers.CharField(required=True)
-#     new_password = serializers.CharField(required=True)
-#
-#     @staticmethod
-#     def validate_new_password(value):
-#         validate_password(value)
-#         return value
