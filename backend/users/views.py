@@ -1,19 +1,20 @@
+# Standart Library
 from http import HTTPStatus
 
+# Django Library
 from django.contrib.auth import authenticate
-from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
+from django.shortcuts import get_object_or_404
 
-from rest_framework import permissions, filters
+# DRF Library
+from rest_framework import filters, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
+# Local Imports
 from .models import CustomUser, Subscriptions
-from .serializers import (
-    UserSerializer,
-    ExpandedUserSerializer,
-)
+from .serializers import ExpandedUserSerializer, UserSerializer
 
 
 class UserModelViewSet(ModelViewSet):
@@ -106,7 +107,7 @@ class UserModelViewSet(ModelViewSet):
         if request.user.id == int(id):
             return Response(
                 data={'error':
-                      f'Подписка на самого себя недопустима'},
+                      'Подписка на самого себя недопустима'},
                 status=HTTPStatus.BAD_REQUEST,
             )
         subs_user = get_object_or_404(CustomUser, pk=id)

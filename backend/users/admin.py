@@ -1,5 +1,7 @@
+# Django Library
 from django.contrib import admin
 
+# Local Imports
 from .models import CustomUser, Subscriptions
 
 

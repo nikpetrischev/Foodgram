@@ -1,13 +1,12 @@
+# Django Library
 from django.urls import include, path
 
+# DRF Library
 from rest_framework import routers
 
+# Local Imports
+from .views import IngredientViewSet, RecipeViewSet, TagViewSet
 from users.views import UserModelViewSet
-from .views import (
-    TagViewSet,
-    IngredientViewSet,
-    RecipeViewSet,
-)
 
 router_v1 = routers.SimpleRouter()
 router_v1.register(

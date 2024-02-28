@@ -1,7 +1,8 @@
-from django.db import models
-from django.db.models import Q, F
+# Django Library
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
+from django.db import models
+from django.db.models import F, Q
 
 
 class CustomUser(AbstractUser):

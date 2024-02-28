@@ -1,12 +1,14 @@
+# Standart Library
 import csv
 import json
 import os
-from typing import Any, TypeVar, Union
 
+# Django Library
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from foodgram_backend.settings import DATA_FOLDER
+# Local Imports
 from recipes.models import Ingredient
 
 IMPORT_FILE = os.path.join(DATA_FOLDER, 'ingredients')

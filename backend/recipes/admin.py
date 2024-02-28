@@ -1,9 +1,8 @@
+# Django Library
 from django.contrib import admin
-from .models import (
-    Recipe,
-    Tag,
-    Ingredient,
-)
+
+# Local Imports
+from .models import Ingredient, Recipe, Tag
 
 
 class TagInline(admin.StackedInline):

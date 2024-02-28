@@ -1,8 +1,10 @@
+# Django Library
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 
-from users.models import CustomUser
+# Local Imports
 from .Mixins import NameAndStrAbstract
+from users.models import CustomUser
 
 
 class Ingredient(NameAndStrAbstract):

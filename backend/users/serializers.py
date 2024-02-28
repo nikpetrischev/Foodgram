@@ -1,12 +1,14 @@
+# Django Library
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 
+# DRF Library
 from rest_framework import serializers
 from rest_framework.validators import ValidationError
 
-from recipes.models import Recipe, UserRecipe
-
+# Local Imports
 from .models import Subscriptions
+from recipes.models import Recipe, UserRecipe
 
 User = get_user_model()
 
@@ -44,7 +46,9 @@ class UserSerializer(serializers.ModelSerializer):
     @staticmethod
     def validate_username(value):
         if value == 'me':
-            raise ValidationError('Unsupported username. Username cannot be \'me\'')
+            raise ValidationError(
+                'Unsupported username. Username cannot be \'me\'',
+            )
         return value
 
     def create(self, validated_data):
@@ -82,6 +86,7 @@ class ExpandedUserSerializer(UserSerializer):
 
     def get_recipes(self, obj):
         # Avoiding circular dependencies in DRF Serializers
+        # Local Imports
         from api.v1.serializers import ShortenedRecipeSerializer
 
         query = Recipe.objects.filter(author=obj.id).order_by('id')

@@ -1,11 +1,9 @@
+# Django Library
 from django_filters import rest_framework as drf_filters
 from django_filters.fields import MultipleChoiceField
 
-from recipes.models import (
-    Recipe,
-    Ingredient,
-)
-
+# Local Imports
+from recipes.models import Ingredient, Recipe
 
 FLAG_CHOICES = (
     (0, False),

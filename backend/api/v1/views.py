@@ -1,43 +1,46 @@
+# Standart Library
 from http import HTTPStatus
 
+# Django Library
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
-
 from django_filters import rest_framework as drf_filters
 
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.units import cm
-from reportlab.platypus import Paragraph, SimpleDocTemplate
-from reportlab.platypus.tables import Table
-
-from rest_framework import viewsets, permissions
+# DRF Library
+from rest_framework import permissions, viewsets
 from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework.mixins import (
     CreateModelMixin,
     DestroyModelMixin,
     ListModelMixin,
     RetrieveModelMixin,
 )
+from rest_framework.response import Response
 
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import cm
+from reportlab.platypus import Paragraph, SimpleDocTemplate
+from reportlab.platypus.tables import Table
+
+# Local Imports
+from .filters import NameSearchFilter, RecipeFilter
+from .mixins import PatchNotPutModelMixin
+from .permissions import RecipePermission
 from .serializers import (
+    IngredientSerializer,
     RecipeReadSerializer,
     RecipeWriteSerializer,
     ShortenedRecipeSerializer,
     TagSerializer,
-    IngredientSerializer
+)
+from recipes.models import (
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    Tag,
+    UserRecipe,
 )
 from users.serializers import FavouritesOrCartSerializer
-from .filters import RecipeFilter, NameSearchFilter
-from .mixins import PatchNotPutModelMixin
-from .permissions import RecipePermission
-from recipes.models import (
-    Recipe,
-    Tag,
-    Ingredient,
-    UserRecipe,
-    RecipeIngredient,
-)
 
 User = get_user_model()
 
@@ -146,11 +149,18 @@ class RecipeViewSet(
     @staticmethod
     def create_pdf(cart_data):
         response = Response(content_type='application/pdf')
-        response['Content-Disposition'] = 'attachment; filename=shopping_cart.pdf'
+        response['Content-Disposition'] \
+            = 'attachment; filename=shopping_cart.pdf'
 
         elements = []
 
-        doc = SimpleDocTemplate(response, rightMargin=0, leftMargin=6.5 * cm, topMargin=0.3 * cm, bottomMargin=0)
+        doc = SimpleDocTemplate(
+            response,
+            rightMargin=0,
+            leftMargin=6.5 * cm,
+            topMargin=0.3 * cm,
+            bottomMargin=0,
+        )
 
         styles = getSampleStyleSheet()
 

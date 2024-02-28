@@ -1,20 +1,24 @@
+# Standart Library
 import base64
 
-import webcolors
-
+# Django Library
 from django.contrib.auth import get_user_model
 from django.core import exceptions
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 
+# DRF Library
 from rest_framework import serializers
 
+import webcolors
+
+# Local Imports
 from recipes.models import (
-    Recipe,
-    Tag,
     Ingredient,
-    RecipeTag,
+    Recipe,
     RecipeIngredient,
+    RecipeTag,
+    Tag,
     UserRecipe,
 )
 from users.serializers import UserSerializer
