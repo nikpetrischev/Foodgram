@@ -21,7 +21,7 @@ jobs:
           DB_HOST: ${{ vars.DB_HOST }}
           DB_PORT: ${{ vars.DB_PORT }}
         ports:
-          - ${{ vars.DB_PORT }}:5432
+          - 5432:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
@@ -41,18 +41,6 @@ jobs:
         SECRET_KEY: ${{ secrets.SECRET_KEY }}
         ALLOWED_HOSTS: ${{ secrets.ALLOWED_HOSTS }}
       run: python -m flake8 backend/
-#    - name: Test with django tests
-#      env:
-#        POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-#        POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-#        POSTGRES_DB: ${{ vars.POSTGRES_DB }}
-#        DB_HOST: 127.0.0.1
-#        DB_PORT: ${{ vars.DB_PORT }}
-#        SECRET_KEY: ${{ secrets.SECRET_KEY }}
-#        ALLOWED_HOSTS: ${{ secrets.ALLOWED_HOSTS }}
-#      run: |
-#        cd backend/
-#        python manage.py test
 
   build_and_push_to_docker_hub:
     name: Push Docker image to DockerHub
