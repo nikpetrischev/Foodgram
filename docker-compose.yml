@@ -7,6 +7,7 @@ volumes:
 
 services:
   db:
+    container_name: 'foodgram_db'
     image: postgres:13.10
     env_file: .env
     volumes:
@@ -27,7 +28,7 @@ services:
     image: nikpetrishchev/foodgram_nginx
     env_file: .env
     ports:
-      - 8000:80
+      - '8000:80'
     volumes:
       - static:/staticfiles/
       - media:/media/

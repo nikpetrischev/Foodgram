@@ -6,6 +6,8 @@ on:
     branches:
       - main
       - 'develop/**'
+    paths-ignore:
+      - './README.md'
 
 jobs:
   tests:
@@ -22,7 +24,7 @@ jobs:
           DB_PORT: ${{ vars.DB_PORT }}
           DB_PROD: ${{ vars.DB_PROD }}
         ports:
-          - 5432:5432
+          - '5432:5432'
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
