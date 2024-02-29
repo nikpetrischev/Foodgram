@@ -138,19 +138,6 @@ REST_FRAMEWORK = {
 
 }
 
-# Email settings
-
-# TODO: Obsolete?
-# if not DEBUG:
-#     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-#     EMAIL_HOST = 'smtp.yandex.ru'
-#     EMAIL_PORT = 587
-#     EMAIL_HOST_USER = os.getenv('EMAIL_USER', 'default_email_user')
-#     EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASSWORD', '')
-#     EMAIL_USE_TLS = True
-# else:
-#     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-
 DJOSER = {
     'LOGIN_FIELD': 'email',
     'SERIALIZERS': {
