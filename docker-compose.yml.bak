@@ -27,14 +27,15 @@ services:
 
   frontend:
     image: nikpetrishchev/foodgram_frontend
-#    command: cp -r /app/build/. /frontend_static/
+    env_file: .env
+    command: cp -r /app/build/. /frontend_static/
     volumes:
-      - ./frontend/:/app/result_build/
-#      - static:/frontend_static/api/result_build/
+      - static:/frontend_static/api/result_build/
 
   nginx:
-    image: nginx:1.19.3
+    image: nikpetrishchev/foodgram_nginx
     restart: always
+    env_file: .env
     depends_on:
       - frontend
       - backend
@@ -49,4 +50,3 @@ services:
       - ./docs/:/usr/share/nginx/html/api/docs/
       - static:/etc/nginx/html/static/
       - media:/etc/nginx/html/media/
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf

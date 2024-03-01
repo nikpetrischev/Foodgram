@@ -134,6 +134,7 @@ jobs:
           script: |
             mkdir -p foodgram-project-react
             mkdir -p foodgram-project-react/docs
+            mkdir -p foodgram-project-react/nginx
 
       - name: Copy docker-compose.yml via ssh
         uses: appleboy/scp-action@master
@@ -144,6 +145,16 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           source: "docker-compose.yml"
           target: "foodgram-project-react"
+
+      - name: Copy docker-compose.yml via ssh
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          source: "nginx/nginx.conf"
+          target: "foodgram-project-react/nginx"
 
       - name: Copy docs via ssh
         uses: appleboy/scp-action@master
