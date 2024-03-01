@@ -53,7 +53,7 @@ services:
       - static:/staticfiles/
       - media:/media/
 #      - ../docs/:/usr/share/nginx/html/api/docs/
-      - ./nginx_conf:/etc/nginx/conf.d/default.conf
+#      - ./nginx_conf:/etc/nginx/conf.d/default.conf
       - ./frontend/build:/usr/share/nginx/html/
       - ./docs/:/usr/share/nginx/html/api/docs/
 #      - static:/etc/nginx/html/static/
