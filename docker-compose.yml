@@ -10,12 +10,10 @@ volumes:
 
 services:
   db:
-    container_name: 'foodgram_db'
+    container_name: foodgram_db
     image: postgres:13.10
     env_file: .env
     restart: always
-    networks:
-      - django-network
     volumes:
       - pg_data:/var/lib/postgresql/data/
 
@@ -23,19 +21,12 @@ services:
     image: nikpetrishchev/foodgram_backend
     env_file: .env
     restart: always
-    depends_on:
-      - db
-    networks:
-      - django-network
     volumes:
       - static:/backend_static/app/static/
       - media:/app/media/
 
   frontend:
     image: nikpetrishchev/foodgram_frontend
-    restart: always
-    depends_on:
-      - db
     env_file: .env
     command: cp -r /app/build/. /frontend_static/
     volumes:
@@ -45,16 +36,17 @@ services:
     image: nikpetrishchev/foodgram_nginx
     restart: always
     env_file: .env
+    depends_on:
+      - frontend
+      - backend
     ports:
       - '8000:80'
-    networks:
-      - django-network
     volumes:
-      - static:/staticfiles/
-      - media:/media/
+#      - static:/staticfiles/
+#      - media:/media/
 #      - ../docs/:/usr/share/nginx/html/api/docs/
 #      - ./nginx_conf:/etc/nginx/conf.d/default.conf
       - ./frontend/build:/usr/share/nginx/html/
       - ./docs/:/usr/share/nginx/html/api/docs/
-#      - static:/etc/nginx/html/static/
-#      - media:/etc/nginx/html/media/
+      - static:/etc/nginx/html/static/
+      - media:/etc/nginx/html/media/
