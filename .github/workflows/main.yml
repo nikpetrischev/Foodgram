@@ -123,18 +123,18 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
-
-      - name: Create required dirs
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USER }}
-          key: ${{ secrets.SSH_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          script: |
-            mkdir -p foodgram-project-react
-            mkdir -p foodgram-project-react/docs
-            mkdir -p foodgram-project-react/nginx
+#
+#      - name: Create required dirs
+#        uses: appleboy/ssh-action@master
+#        with:
+#          host: ${{ secrets.HOST }}
+#          username: ${{ secrets.USER }}
+#          key: ${{ secrets.SSH_KEY }}
+#          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+#          script: |
+#            mkdir -p foodgram-project-react
+#            mkdir -p foodgram-project-react/docs
+#            mkdir -p foodgram-project-react/nginx
 
       - name: Copy docker-compose.yml via ssh
         uses: appleboy/scp-action@master
@@ -154,7 +154,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           source: "nginx/nginx.conf"
-          target: "foodgram-project-react/nginx"
+          target: "foodgram-project-react/"
 
       - name: Copy docs via ssh
         uses: appleboy/scp-action@master
@@ -164,7 +164,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           source: "docs/*"
-          target: "foodgram-project-react/docs"
+          target: "foodgram-project-react/"
 
   deploy:
     runs-on: ubuntu-latest
