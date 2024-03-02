@@ -23,7 +23,7 @@ services:
     restart: always
     volumes:
       - static:/backend_static/app/static/
-      - media:../media/
+      - media:/media/
 
   frontend:
     image: nikpetrishchev/foodgram_frontend
