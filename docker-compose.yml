@@ -27,10 +27,8 @@ services:
 
   frontend:
     image: nikpetrishchev/foodgram_frontend
-#    command: cp -r /app/build/. /frontend_static/
     volumes:
       - ./frontend/:/app/result_build/
-#      - static:/frontend_static/api/result_build/
 
   nginx:
     image: nginx:1.19.3
@@ -41,13 +39,9 @@ services:
     ports:
       - '8000:80'
     volumes:
-#      - static:/staticfiles/
-#      - media:/media/
-#      - ../docs/:/usr/share/nginx/html/api/docs/
-#      - ./nginx_conf:/etc/nginx/conf.d/default.conf
       - ./frontend/build:/usr/share/nginx/html/
       - ./docs/:/usr/share/nginx/html/api/docs/
       - static:/etc/nginx/html/static/
-#      - media:/etc/nginx/html/media/
-      - media:/media/
+      - media:/etc/nginx/html/media/
+#      - media:/media/
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
