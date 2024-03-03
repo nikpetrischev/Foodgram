@@ -43,5 +43,4 @@ services:
       - ./docs/:/usr/share/nginx/html/api/docs/
       - static:/etc/nginx/html/static/
       - media:/etc/nginx/html/media/
-#      - media:/media/
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf

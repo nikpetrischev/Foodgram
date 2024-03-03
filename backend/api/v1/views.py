@@ -17,10 +17,12 @@ from rest_framework.mixins import (
 )
 from rest_framework.response import Response
 
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
+from reportlab.pdfbase import pdfmetrics, ttfonts
 from reportlab.platypus import Paragraph, SimpleDocTemplate
-from reportlab.platypus.tables import Table
+from reportlab.platypus.tables import Table, TableStyle
 
 # Local Imports
 from .filters import NameSearchFilter, RecipeFilter
@@ -152,18 +154,33 @@ class RecipeViewSet(
         response['Content-Disposition'] \
             = 'attachment; filename=shopping_cart.pdf'
 
+        pdfmetrics.registerFont(
+            ttfonts.TTFont(
+                'DejaVuSerif',
+                './static/font/DejaVuSerif.ttf',
+            ),
+        )
+
+        # TODO: test
+        from io import BytesIO
+
+        buff = BytesIO()
+        import os
+        save_name = os.path.join(os.path.expanduser('~'), 'Desktop/', 'shopping_cart.pdf')
+        # TODO: end test
+
         elements = []
 
         doc = SimpleDocTemplate(
-            response,
-            rightMargin=0,
-            leftMargin=6.5 * cm,
-            topMargin=0.3 * cm,
-            bottomMargin=0,
+            # response,
+            buff,
+            # save_name,
+            pagesize=(landscape(A4)),
         )
 
         styles = getSampleStyleSheet()
-
+        title_style = styles['Title']
+        title_style.fontName = 'DejaVuSerif'
         paragraph = Paragraph('Покупки', styles['Title'])
 
         elements.append(paragraph)
@@ -177,10 +194,38 @@ class RecipeViewSet(
                     item['total'],
                 ),
             )
-        table = Table(cart_list)
+        table = Table(cart_list, colWidths=(20 * cm, 3 * cm, 5 * cm))
+
+        table.setStyle(
+            TableStyle(
+                [
+                    ('GRID', (0, 0), (-1, -1), 1, (0, 0, 0)),
+                    ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'DejaVuSerif', 18),
+                    ('BACKGROUND', (0, 0), (-1, 0), (0, 0, 0)),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), (1, 1, 1)),
+                    ('LINEBEFORE', (1, 0), (1, 0), 2, (1, 1, 1)),
+                    ('LINEBEFORE', (2, 0), (2, 0), 2, (1, 1, 1)),
+                    ('FONTNAME', (0, 1), (-1, -1), 'DejaVuSerif'),
+                    (
+                        'ROWBACKGROUNDS',
+                        (0, 1),
+                        (-1, -1),
+                        [(1, 1, 1), (210/255, 210/255, 210/255)],
+                    ),
+                ],
+            ),
+        )
 
         elements.append(table)
         doc.build(elements)
+
+        # TODO: test saving pdf
+        response['Content-Disposition'] \
+            = f'attachment; filename={save_name}'
+        response.write(buff.getvalue())
+        buff.close()
+        # TODO: End todo
 
         return response
 
@@ -196,14 +241,12 @@ class RecipeViewSet(
         )
         ingredients = (
             RecipeIngredient.objects.filter(recipe__in=recipes)
-            .annotate(total=Sum('amount'))
             .values(
                 'ingredient__name',
-                'total',
                 'ingredient__measurement_unit',
             )
+            .annotate(total=Sum('amount'))
         )
-
         return self.create_pdf(ingredients)
 
     @action(
