@@ -4,7 +4,6 @@ from http import HTTPStatus
 # Django Library
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
-from django.http import HttpResponse
 from django_filters import rest_framework as drf_filters
 
 # DRF Library
@@ -151,14 +150,14 @@ class RecipeViewSet(
 
     @staticmethod
     def create_pdf(cart_data):
-        # Standart Library
-        from io import BytesIO
+        # # Standart Library
+        # from io import BytesIO
+        #
+        # buffer = BytesIO()
 
-        buffer = BytesIO()
-
-        response = HttpResponse(content_type='application/pdf')
-        # response['Content-Disposition'] = ('attachment; '
-        #                                    'filename="shopping_cart.pdf"')
+        response = Response(content_type='application/pdf')
+        response['Content-Disposition'] = ('attachment; '
+                                           'filename="shopping_cart.pdf"')
 
         pdfmetrics.registerFont(
             ttfonts.TTFont(
@@ -168,7 +167,7 @@ class RecipeViewSet(
         )
 
         elements = []
-
+        '''
         doc = SimpleDocTemplate(
             # response,
             buffer,
@@ -181,7 +180,7 @@ class RecipeViewSet(
         paragraph = Paragraph('Покупки', styles['Title'])
 
         elements.append(paragraph)
-
+        '''
         cart_list = [('Продукт', 'Ед.изм.', 'Кол-во')]
         for item in cart_data:
             cart_list.append(
@@ -214,13 +213,19 @@ class RecipeViewSet(
             ),
         )
 
-        elements.append(table)
-        doc.build(elements)
+        # elements.append(table)
+        # doc.build(elements)
 
-        response['Content-Disposition'] = ('attachment; '
-                                           'filename="shopping_list.pdf"')
-        response.write(buffer.getvalue())
-        buffer.close()
+        from reportlab.pdfgen import canvas
+
+        page = canvas.Canvas(response)
+        table.drawOn(page, 2.5 * cm, 2.5 * cm)
+        page.showPage()
+        page.save()
+        # response['Content-Disposition'] = ('attachment; '
+        #                                    'filename="shopping_list.pdf"')
+        # response.write(buffer.getvalue())
+        # buffer.close()
 
         return response
 
