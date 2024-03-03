@@ -4,6 +4,7 @@ from http import HTTPStatus
 # Django Library
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
+from django.http import HttpResponse
 from django_filters import rest_framework as drf_filters
 
 # DRF Library
@@ -150,7 +151,7 @@ class RecipeViewSet(
 
     @staticmethod
     def create_pdf(cart_data):
-        response = Response(content_type='application/pdf')
+        response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = ('attachment; '
                                            'filename="shopping_cart.pdf"')
 
@@ -161,25 +162,10 @@ class RecipeViewSet(
             ),
         )
 
-        # TODO: test
-        # Standart Library
-        from io import BytesIO
-
-        buff = BytesIO()
-        # Standart Library
-        import os
-        save_name = os.path.join(
-            os.path.expanduser('~'),
-            'Desktop/',
-            'shopping_cart.pdf',
-        )
-        # TODO: end test
-
         elements = []
 
         doc = SimpleDocTemplate(
             response,
-            # buff,
             pagesize=(landscape(A4)),
         )
 
@@ -224,13 +210,6 @@ class RecipeViewSet(
 
         elements.append(table)
         doc.build(elements)
-
-        # TODO: test saving pdf
-        response['Content-Disposition'] \
-            = f'attachment; filename={save_name}'
-        response.write(buff.getvalue())
-        buff.close()
-        # TODO: End todo
 
         return response
 
