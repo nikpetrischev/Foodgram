@@ -219,6 +219,7 @@ class RecipeViewSet(
         from reportlab.pdfgen import canvas
 
         page = canvas.Canvas(response)
+        table.wrapOn(page, 2.5 * cm, 2.5 * cm)
         table.drawOn(page, 2.5 * cm, 2.5 * cm)
         page.showPage()
         page.save()
