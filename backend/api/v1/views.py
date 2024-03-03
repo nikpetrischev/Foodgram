@@ -155,9 +155,15 @@ class RecipeViewSet(
         #
         # buffer = BytesIO()
 
-        response = Response(content_type='application/pdf')
-        response['Content-Disposition'] = ('attachment; '
-                                           'filename="shopping_cart.pdf"')
+        # response = Response(content_type='application/pdf')
+        # response['Content-Disposition'] = ('attachment; '
+        #                                    'filename="shopping_cart.pdf"')
+        response = Response(
+            headers={
+                'Content-Type': 'application/pdf',
+                'Content-Disposition': 'attachment; filename=shopping_list.pdf',
+            },
+        )
 
         pdfmetrics.registerFont(
             ttfonts.TTFont(
