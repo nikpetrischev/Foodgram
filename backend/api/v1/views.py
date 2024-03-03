@@ -162,11 +162,17 @@ class RecipeViewSet(
         )
 
         # TODO: test
+        # Standart Library
         from io import BytesIO
 
         buff = BytesIO()
+        # Standart Library
         import os
-        save_name = os.path.join(os.path.expanduser('~'), 'Desktop/', 'shopping_cart.pdf')
+        save_name = os.path.join(
+            os.path.expanduser('~'),
+            'Desktop/',
+            'shopping_cart.pdf',
+        )
         # TODO: end test
 
         elements = []
@@ -211,7 +217,7 @@ class RecipeViewSet(
                         'ROWBACKGROUNDS',
                         (0, 1),
                         (-1, -1),
-                        [(1, 1, 1), (210/255, 210/255, 210/255)],
+                        [(1, 1, 1), (210 / 255, 210 / 255, 210 / 255)],
                     ),
                 ],
             ),
