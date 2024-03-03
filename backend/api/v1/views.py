@@ -151,8 +151,8 @@ class RecipeViewSet(
     @staticmethod
     def create_pdf(cart_data):
         response = Response(content_type='application/pdf')
-        response['Content-Disposition'] \
-            = 'attachment; filename=shopping_cart.pdf'
+        response['Content-Disposition'] = ('attachment; '
+                                           'filename="shopping_cart.pdf"')
 
         pdfmetrics.registerFont(
             ttfonts.TTFont(
@@ -178,9 +178,8 @@ class RecipeViewSet(
         elements = []
 
         doc = SimpleDocTemplate(
-            # response,
-            buff,
-            # save_name,
+            response,
+            # buff,
             pagesize=(landscape(A4)),
         )
 
