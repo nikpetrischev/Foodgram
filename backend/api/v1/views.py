@@ -161,7 +161,8 @@ class RecipeViewSet(
         response = Response(
             headers={
                 'Content-Type': 'application/pdf',
-                'Content-Disposition': 'attachment; filename=shopping_list.pdf',
+                'Content-Disposition':
+                    'attachment; filename=shopping_list.pdf',
             },
         )
 
