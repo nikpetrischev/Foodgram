@@ -218,7 +218,7 @@ class RecipeViewSet(
         doc.build(elements)
 
         response['Content-Disposition'] = ('attachment; '
-                                           'filename="shopping_cart.pdf"')
+                                           'filename="shopping_list.pdf"')
         response.write(buffer.getvalue())
         buffer.close()
 
