@@ -17,11 +17,11 @@ from rest_framework.mixins import (
 )
 from rest_framework.response import Response
 
-from reportlab.lib.pagesizes import A4, landscape
-from reportlab.lib.styles import getSampleStyleSheet
+# from reportlab.lib.pagesizes import A4, landscape
+# from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.pdfbase import pdfmetrics, ttfonts
-from reportlab.platypus import Paragraph, SimpleDocTemplate
+# from reportlab.platypus import Paragraph, SimpleDocTemplate
 from reportlab.platypus.tables import Table, TableStyle
 
 # Local Imports
@@ -166,7 +166,7 @@ class RecipeViewSet(
             ),
         )
 
-        elements = []
+        # elements = []
         '''
         doc = SimpleDocTemplate(
             # response,
