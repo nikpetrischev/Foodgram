@@ -152,10 +152,7 @@ class RecipeViewSet(
 
     @staticmethod
     def create_pdf(cart_data):
-        # Standart Library
-        from io import BytesIO
-
-        buffer = BytesIO()
+        buffer = io.BytesIO()
 
         # response = Response(content_type='application/pdf')
         # response['Content-Disposition'] = ('attachment; '
