@@ -1,10 +1,12 @@
 # Standart Library
+import io
 from http import HTTPStatus
 
 # Django Library
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
 from django_filters import rest_framework as drf_filters
+from django.http import FileResponse
 
 # DRF Library
 from rest_framework import permissions, viewsets
@@ -150,21 +152,21 @@ class RecipeViewSet(
 
     @staticmethod
     def create_pdf(cart_data):
-        # # Standart Library
-        # from io import BytesIO
-        #
-        # buffer = BytesIO()
+        # Standart Library
+        from io import BytesIO
+
+        buffer = BytesIO()
 
         # response = Response(content_type='application/pdf')
         # response['Content-Disposition'] = ('attachment; '
         #                                    'filename="shopping_cart.pdf"')
-        response = Response(
-            headers={
-                'Content-Type': 'application/pdf',
-                'Content-Disposition':
-                    'attachment; filename=shopping_list.pdf',
-            },
-        )
+        # response = Response(
+        #     headers={
+        #         'Content-Type': 'application/pdf',
+        #         'Content-Disposition':
+        #             'attachment; filename=shopping_list.pdf',
+        #     },
+        # )
 
         pdfmetrics.registerFont(
             ttfonts.TTFont(
@@ -225,7 +227,8 @@ class RecipeViewSet(
 
         from reportlab.pdfgen import canvas
 
-        page = canvas.Canvas(response)
+        # page = canvas.Canvas(response)
+        page = canvas.Canvas(buffer)
         table.wrapOn(page, 2.5 * cm, 2.5 * cm)
         table.drawOn(page, 2.5 * cm, 2.5 * cm)
         page.showPage()
@@ -234,7 +237,12 @@ class RecipeViewSet(
         #                                    'filename="shopping_list.pdf"')
         # response.write(buffer.getvalue())
         # buffer.close()
-
+        buffer.seek(io.SEEK_SET)
+        response = FileResponse(
+            buffer,
+            as_attachment=True,
+            filename='shopping_list.pdf',
+        )
         return response
 
     @action(
