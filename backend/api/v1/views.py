@@ -1,6 +1,6 @@
 # flake8: noqa
 # Standart Library
-import io
+# import io
 from http import HTTPStatus
 
 # Django Library
