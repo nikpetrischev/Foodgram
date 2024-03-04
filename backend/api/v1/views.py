@@ -231,13 +231,13 @@ class RecipeViewSet(
         page = canvas.Canvas(buffer)
         table.wrapOn(page, 2.5 * cm, 2.5 * cm)
         table.drawOn(page, 2.5 * cm, 2.5 * cm)
-        page.showPage()
+        # page.showPage()
         page.save()
         # response['Content-Disposition'] = ('attachment; '
         #                                    'filename="shopping_list.pdf"')
         # response.write(buffer.getvalue())
         # buffer.close()
-        buffer.seek(io.SEEK_SET)
+        buffer.seek(0)
         response = FileResponse(
             buffer,
             as_attachment=True,
