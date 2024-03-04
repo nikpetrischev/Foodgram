@@ -1,9 +1,9 @@
 # flake8: noqa
+# Standard Library
 import os
 from pathlib import Path
 
 import dotenv
-
 
 dotenv.load_dotenv(dotenv.find_dotenv())
 

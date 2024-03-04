@@ -1,9 +1,11 @@
 # Standart Library
+# Standard Library
 import io
 
 # DRF Library
 from rest_framework import renderers
 
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.units import cm
 from reportlab.pdfbase import pdfmetrics, ttfonts
 from reportlab.pdfgen import canvas
@@ -56,9 +58,10 @@ class ShoppingCartRenderer(renderers.BaseRenderer):
             ),
         )
 
-        page = canvas.Canvas(buffer)
+        page = canvas.Canvas(buffer, pagesize=landscape(A4))
+        page.setFont('DejaVuSerif', 16)
         page.drawString(0, 0, 'Список покупок')
-        # table.wrapOn(page, 2.5 * cm, 2.5 * cm)
+        table.wrapOn(page, 2.5 * cm, 2.5 * cm)
         table.drawOn(page, 2.5 * cm, 2.5 * cm)
         page.showPage()
         page.save()
