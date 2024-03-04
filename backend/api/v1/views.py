@@ -1,3 +1,4 @@
+# flake8: noqa
 # Standart Library
 import io
 from http import HTTPStatus
@@ -30,6 +31,7 @@ from reportlab.platypus.tables import Table, TableStyle
 from .filters import NameSearchFilter, RecipeFilter
 from .mixins import PatchNotPutModelMixin
 from .permissions import RecipePermission
+from .renderers import ShoppingCartRenderer
 from .serializers import (
     IngredientSerializer,
     RecipeReadSerializer,
@@ -240,12 +242,34 @@ class RecipeViewSet(
             as_attachment=True,
             filename='shopping_list.pdf',
         )
+        breakpoint()
         return response
+
+    # @action(
+    #     methods=['get'],
+    #     detail=False,
+    #     permission_classes=[permissions.IsAuthenticated],
+    # )
+    # def download_shopping_cart(self, request):
+    #     recipes = Recipe.objects.filter(
+    #         userrecipe__user=request.user,
+    #         userrecipe__is_in_shopping_cart=True,
+    #     )
+    #     ingredients = (
+    #         RecipeIngredient.objects.filter(recipe__in=recipes)
+    #         .values(
+    #             'ingredient__name',
+    #             'ingredient__measurement_unit',
+    #         )
+    #         .annotate(total=Sum('amount'))
+    #     )
+    #     return self.create_pdf(ingredients)
 
     @action(
         methods=['get'],
         detail=False,
         permission_classes=[permissions.IsAuthenticated],
+        renderer_classes=[ShoppingCartRenderer],
     )
     def download_shopping_cart(self, request):
         recipes = Recipe.objects.filter(
@@ -260,7 +284,13 @@ class RecipeViewSet(
             )
             .annotate(total=Sum('amount'))
         )
-        return self.create_pdf(ingredients)
+        return Response(
+            data=ingredients,
+            headers={
+                'Content-Disposition':
+                    'attachment; filename="shopping_list.pdf"',
+            },
+        )
 
     @action(
         methods=['post'],
