@@ -105,6 +105,14 @@ class RecipeIngredient(models.Model):
     )
     objects = models.Manager()
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['recipe', 'ingredient'],
+                name='no_same_ingredients',
+            ),
+        ]
+
     def __str__(self):
         ingredient = Ingredient.objects.get(pk=self.ingredient.id)
         return (f'{ingredient.name}: '
@@ -121,6 +129,17 @@ class RecipeTag(models.Model):
         on_delete=models.CASCADE,
     )
     objects = models.Manager()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['recipe', 'tag'],
+                name='no_same_tags',
+            ),
+        ]
+
+    def __str__(self):
+        return self.tag.name
 
 
 class UserRecipe(models.Model):

@@ -1,5 +1,3 @@
-# flake8: noqa
-# Standart Library
 # Standard Library
 import io
 from http import HTTPStatus
@@ -21,11 +19,8 @@ from rest_framework.mixins import (
 )
 from rest_framework.response import Response
 
-# from reportlab.lib.pagesizes import A4, landscape
-# from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.pdfbase import pdfmetrics, ttfonts
-# from reportlab.platypus import Paragraph, SimpleDocTemplate
 from reportlab.platypus.tables import Table, TableStyle
 
 # Local Imports
@@ -153,118 +148,65 @@ class RecipeViewSet(
             status=HTTPStatus.BAD_REQUEST,
         )
 
-    @staticmethod
-    def create_pdf(cart_data):
-        buffer = io.BytesIO()
-
-        # response = Response(content_type='application/pdf')
-        # response['Content-Disposition'] = ('attachment; '
-        #                                    'filename="shopping_cart.pdf"')
-        # response = Response(
-        #     headers={
-        #         'Content-Type': 'application/pdf',
-        #         'Content-Disposition':
-        #             'attachment; filename=shopping_list.pdf',
-        #     },
-        # )
-
-        pdfmetrics.registerFont(
-            ttfonts.TTFont(
-                'DejaVuSerif',
-                './static/font/DejaVuSerif.ttf',
-            ),
-        )
-
-        # elements = []
-        '''
-        doc = SimpleDocTemplate(
-            # response,
-            buffer,
-            pagesize=(landscape(A4)),
-        )
-
-        styles = getSampleStyleSheet()
-        title_style = styles['Title']
-        title_style.fontName = 'DejaVuSerif'
-        paragraph = Paragraph('Покупки', styles['Title'])
-
-        elements.append(paragraph)
-        '''
-        cart_list = [('Продукт', 'Ед.изм.', 'Кол-во')]
-        for item in cart_data:
-            cart_list.append(
-                (
-                    item['ingredient__name'],
-                    item['ingredient__measurement_unit'],
-                    item['total'],
-                ),
-            )
-        table = Table(cart_list, colWidths=(20 * cm, 3 * cm, 5 * cm))
-
-        table.setStyle(
-            TableStyle(
-                [
-                    ('GRID', (0, 0), (-1, -1), 1, (0, 0, 0)),
-                    ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
-                    ('FONTNAME', (0, 0), (-1, 0), 'DejaVuSerif', 18),
-                    ('BACKGROUND', (0, 0), (-1, 0), (0, 0, 0)),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), (1, 1, 1)),
-                    ('LINEBEFORE', (1, 0), (1, 0), 2, (1, 1, 1)),
-                    ('LINEBEFORE', (2, 0), (2, 0), 2, (1, 1, 1)),
-                    ('FONTNAME', (0, 1), (-1, -1), 'DejaVuSerif'),
-                    (
-                        'ROWBACKGROUNDS',
-                        (0, 1),
-                        (-1, -1),
-                        [(1, 1, 1), (210 / 255, 210 / 255, 210 / 255)],
-                    ),
-                ],
-            ),
-        )
-
-        # elements.append(table)
-        # doc.build(elements)
-
-        from reportlab.pdfgen import canvas
-
-        # page = canvas.Canvas(response)
-        page = canvas.Canvas(buffer)
-        table.wrapOn(page, 2.5 * cm, 2.5 * cm)
-        table.drawOn(page, 2.5 * cm, 2.5 * cm)
-        # page.showPage()
-        page.save()
-        # response['Content-Disposition'] = ('attachment; '
-        #                                    'filename="shopping_list.pdf"')
-        # response.write(buffer.getvalue())
-        # buffer.close()
-        buffer.seek(0)
-        response = FileResponse(
-            buffer,
-            as_attachment=True,
-            filename='shopping_list.pdf',
-        )
-        breakpoint()
-        return response
-
-    # @action(
-    #     methods=['get'],
-    #     detail=False,
-    #     permission_classes=[permissions.IsAuthenticated],
-    # )
-    # def download_shopping_cart(self, request):
-    #     recipes = Recipe.objects.filter(
-    #         userrecipe__user=request.user,
-    #         userrecipe__is_in_shopping_cart=True,
+    # @staticmethod
+    # def create_pdf(cart_data):
+    #     buffer = io.BytesIO()
+    #
+    #     pdfmetrics.registerFont(
+    #         ttfonts.TTFont(
+    #             'DejaVuSerif',
+    #             './static/font/DejaVuSerif.ttf',
+    #         ),
     #     )
-    #     ingredients = (
-    #         RecipeIngredient.objects.filter(recipe__in=recipes)
-    #         .values(
-    #             'ingredient__name',
-    #             'ingredient__measurement_unit',
+    #
+    #     cart_list = [('Продукт', 'Ед.изм.', 'Кол-во')]
+    #     for item in cart_data:
+    #         cart_list.append(
+    #             (
+    #                 item['ingredient__name'],
+    #                 item['ingredient__measurement_unit'],
+    #                 item['total'],
+    #             ),
     #         )
-    #         .annotate(total=Sum('amount'))
+    #     table = Table(cart_list, colWidths=(20 * cm, 3 * cm, 5 * cm))
+    #
+    #     table.setStyle(
+    #         TableStyle(
+    #             [
+    #                 ('GRID', (0, 0), (-1, -1), 1, (0, 0, 0)),
+    #                 ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
+    #                 ('FONTNAME', (0, 0), (-1, 0), 'DejaVuSerif', 18),
+    #                 ('BACKGROUND', (0, 0), (-1, 0), (0, 0, 0)),
+    #                 ('TEXTCOLOR', (0, 0), (-1, 0), (1, 1, 1)),
+    #                 ('LINEBEFORE', (1, 0), (1, 0), 2, (1, 1, 1)),
+    #                 ('LINEBEFORE', (2, 0), (2, 0), 2, (1, 1, 1)),
+    #                 ('FONTNAME', (0, 1), (-1, -1), 'DejaVuSerif'),
+    #                 (
+    #                     'ROWBACKGROUNDS',
+    #                     (0, 1),
+    #                     (-1, -1),
+    #                     [(1, 1, 1), (210 / 255, 210 / 255, 210 / 255)],
+    #                 ),
+    #             ],
+    #         ),
     #     )
-    #     return self.create_pdf(ingredients)
+    #
+    #     from reportlab.pdfgen import canvas
+    #
+    #     page = canvas.Canvas(buffer)
+    #     table.wrapOn(page, 2.5 * cm, 2.5 * cm)
+    #     table.drawOn(page, 2.5 * cm, 2.5 * cm)
+    #
+    #     page.save()
+    #
+    #     buffer.seek(0)
+    #     response = FileResponse(
+    #         buffer,
+    #         as_attachment=True,
+    #         filename='shopping_list.pdf',
+    #     )
+    #     breakpoint()
+    #     return response
 
     @action(
         methods=['get'],
@@ -277,10 +219,6 @@ class RecipeViewSet(
             userrecipe__user=request.user,
             userrecipe__is_in_shopping_cart=True,
         )
-        #
-        # import logging
-        # logger = logging.getLogger('ViewLogger')
-        # logger.info(f'{recipes.count()}')
 
         ingredients = (
             RecipeIngredient.objects.filter(recipe__in=recipes)
@@ -291,8 +229,6 @@ class RecipeViewSet(
             .annotate(total=Sum('amount'))
         )
 
-        logger.info(f'{ingredients.count()}')
-
         response = Response(
             data=ingredients,
             headers={
@@ -302,9 +238,6 @@ class RecipeViewSet(
                     'application/pdf; charset=utf-8',
             },
         )
-        #
-        # logger.info(f'response:\n\tdata: {response.data}\n\theaders: {response.headers}\n\tcontent_type: {response.content_type}')
-        # logger.info(f'renderer:\n\tformat: {request.accepted_renderer}\n\t')
 
         return response
 

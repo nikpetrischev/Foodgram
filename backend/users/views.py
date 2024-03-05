@@ -1,4 +1,4 @@
-# Standart Library
+
 # Standard Library
 from http import HTTPStatus
 
