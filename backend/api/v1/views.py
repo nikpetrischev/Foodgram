@@ -1,7 +1,7 @@
 # flake8: noqa
 # Standart Library
-import io
 # Standard Library
+import io
 from http import HTTPStatus
 
 # Django Library
@@ -277,10 +277,10 @@ class RecipeViewSet(
             userrecipe__user=request.user,
             userrecipe__is_in_shopping_cart=True,
         )
-
-        import logging
-        logger = logging.getLogger('ViewLogger')
-        logger.info(f'{recipes.count()}')
+        #
+        # import logging
+        # logger = logging.getLogger('ViewLogger')
+        # logger.info(f'{recipes.count()}')
 
         ingredients = (
             RecipeIngredient.objects.filter(recipe__in=recipes)
@@ -302,9 +302,9 @@ class RecipeViewSet(
                     'application/pdf; charset=utf-8',
             },
         )
-
-        logger.info(f'response:\n\tdata: {response.data}\n\theaders: {response.headers}\n\tcontent_type: {response.content_type}')
-        logger.info(f'renderer:\n\tformat: {request.accepted_renderer}\n\t')
+        #
+        # logger.info(f'response:\n\tdata: {response.data}\n\theaders: {response.headers}\n\tcontent_type: {response.content_type}')
+        # logger.info(f'renderer:\n\tformat: {request.accepted_renderer}\n\t')
 
         return response
 
