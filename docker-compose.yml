@@ -20,6 +20,7 @@ services:
   backend:
     image: nikpetrishchev/foodgram_backend
     env_file: .env
+    tty: true
     restart: always
     volumes:
       - static:/backend_static/app/static/
