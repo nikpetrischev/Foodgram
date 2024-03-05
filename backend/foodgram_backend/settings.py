@@ -165,6 +165,7 @@ LOGGING = {
     'root': {
         'handlers': ['console'],
         'level': 'INFO',
+        'propagate': False,
     },
     # 'loggers': {
     #     'django.db.backends': {
