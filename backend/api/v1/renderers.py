@@ -1,4 +1,3 @@
-# Standart Library
 # Standard Library
 import io
 
@@ -65,5 +64,9 @@ class ShoppingCartRenderer(renderers.BaseRenderer):
         table.drawOn(page, 2.5 * cm, 2.5 * cm)
         page.showPage()
         page.save()
+
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f'{page}')
 
         return buffer.getvalue()

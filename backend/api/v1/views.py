@@ -277,6 +277,11 @@ class RecipeViewSet(
             userrecipe__user=request.user,
             userrecipe__is_in_shopping_cart=True,
         )
+
+        import logging
+        logger = logging.getLogger('ViewLogger')
+        logger.info(f'{recipes.count()}')
+
         ingredients = (
             RecipeIngredient.objects.filter(recipe__in=recipes)
             .values(
@@ -285,7 +290,10 @@ class RecipeViewSet(
             )
             .annotate(total=Sum('amount'))
         )
-        return Response(
+
+        logger.info(f'{ingredients.count()}')
+
+        response = Response(
             data=ingredients,
             headers={
                 'Content-Disposition':
@@ -294,6 +302,11 @@ class RecipeViewSet(
                     'application/pdf; charset=utf-8',
             },
         )
+
+        logger.info(f'response:\n\tdata: {response.data}\n\theaders: {response.headers}\n\tcontent_type: {response.content_type}')
+        logger.info(f'renderer:\n\tformat: {request.accepted_renderer}\n\t')
+
+        return response
 
     @action(
         methods=['post'],

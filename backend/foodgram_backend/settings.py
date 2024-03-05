@@ -153,3 +153,25 @@ DJOSER = {
 }
 
 DATA_FOLDER = BASE_DIR / 'static/data/'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    # 'loggers': {
+    #     'django.db.backends': {
+    #         'level': 'DEBUG',
+    #         'handlers': [
+    #             'console',
+    #         ],
+    #     },
+    # },
+}
