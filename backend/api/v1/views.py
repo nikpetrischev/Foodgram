@@ -290,6 +290,8 @@ class RecipeViewSet(
             headers={
                 'Content-Disposition':
                     'attachment; filename="shopping_list.pdf"',
+                'Content-Type':
+                    'application/pdf; charset=utf-8',
             },
         )
 
