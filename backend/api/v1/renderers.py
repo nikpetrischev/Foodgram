@@ -65,6 +65,7 @@ class ShoppingCartRenderer(renderers.BaseRenderer):
         page.showPage()
         page.save()
 
+        # Standard Library
         import logging
         logger = logging.getLogger(__name__)
         logger.info(f'{page}')
