@@ -3,11 +3,18 @@ from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 
 # Local Imports
-from .Mixins import NameAndStrAbstract
+from .mixins import NameAndStrAbstract
 from users.models import CustomUser
 
 
 class Ingredient(NameAndStrAbstract):
+    """
+    A model representing an ingredient.
+
+    This model includes fields for the name of the ingredient and its measurement unit.
+    It inherits from NameAndStrAbstract, which provides a common structure for models
+    that have a name and a string representation.
+    """
     measurement_unit = models.CharField(
         blank=False,
         null=False,
@@ -20,10 +27,26 @@ class Ingredient(NameAndStrAbstract):
         verbose_name_plural = 'ингредиенты'
 
     def __str__(self):
+        """
+        Return a string representation of the ingredient.
+
+        Returns
+        -------
+        str
+            A string in the format "name (measurement_unit)".
+        """
         return f'{self.name} ({self.measurement_unit})'
 
 
 class Tag(NameAndStrAbstract):
+    """
+    A model representing a tag.
+
+    This model includes fields for the name of the tag, a slug for URL-friendly
+    identification, and a color represented as a hex code.
+    It inherits from NameAndStrAbstract, which provides a common structure for models
+    that have a name and a string representation.
+    """
     slug = models.SlugField(
         null=False,
         blank=False,
@@ -46,6 +69,13 @@ class Tag(NameAndStrAbstract):
 
 
 class Recipe(NameAndStrAbstract):
+    """
+    A model representing a recipe.
+
+    This model includes fields for the author, image, text, ingredients, tags, and
+    cooking time. It also includes a many-to-many relationship with the Ingredient
+    and Tag models through the RecipeIngredient and RecipeTag models, respectively.
+    """
     author = models.ForeignKey(
         to=CustomUser,
         related_name='recipes',
@@ -87,6 +117,12 @@ class Recipe(NameAndStrAbstract):
 
 
 class RecipeIngredient(models.Model):
+    """
+    A model representing the relationship between a recipe and an ingredient.
+
+    This model includes fields for the recipe, ingredient, and amount of the ingredient
+    used in the recipe. It ensures that each recipe-ingredient pair is unique.
+    """
     recipe = models.ForeignKey(
         to=Recipe,
         on_delete=models.CASCADE,
@@ -114,12 +150,26 @@ class RecipeIngredient(models.Model):
         ]
 
     def __str__(self):
+        """
+        Return a string representation of the recipe-ingredient relationship.
+
+        Returns
+        -------
+        str
+            A string in the format "ingredient_name: amount measurement_unit".
+        """
         ingredient = Ingredient.objects.get(pk=self.ingredient.id)
         return (f'{ingredient.name}: '
                 + f'{self.amount} {ingredient.measurement_unit}')
 
 
 class RecipeTag(models.Model):
+    """
+    A model representing the relationship between a recipe and a tag.
+
+    This model includes fields for the recipe and tag. It ensures that each
+    recipe-tag pair is unique.
+    """
     recipe = models.ForeignKey(
         to=Recipe,
         on_delete=models.CASCADE,
@@ -139,10 +189,25 @@ class RecipeTag(models.Model):
         ]
 
     def __str__(self):
+        """
+        Return a string representation of the recipe-tag relationship.
+
+        Returns
+        -------
+        str
+            The name of the tag.
+        """
         return self.tag.name
 
 
 class UserRecipe(models.Model):
+    """
+    A model representing a user's relationship with a recipe.
+
+    This model includes fields for the user, recipe, and flags indicating whether
+    the recipe is favorited or in the shopping cart. It ensures that each
+    user-recipe pair is unique.
+    """
     user = models.ForeignKey(
         to=CustomUser,
         blank=False,
@@ -165,7 +230,7 @@ class UserRecipe(models.Model):
         verbose_name='В корзине',
         default=False,
     )
-    objects = models.Manager
+    objects = models.Manager()
 
     class Meta:
         constraints = [
@@ -178,4 +243,12 @@ class UserRecipe(models.Model):
         verbose_name_plural = 'избранное'
 
     def __str__(self):
+        """
+        Return a string representation of the user-recipe relationship.
+
+        Returns
+        -------
+        str
+            The string representation of the recipe.
+        """
         return f'{self.recipe}'

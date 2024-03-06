@@ -1,6 +1,6 @@
 # Standard Library
 import io
-from typing import Any, Iterable
+from typing import Any
 
 # DRF Library
 from rest_framework import renderers
@@ -25,18 +25,54 @@ TABLE_OFFSETS = {
 
 class ShoppingCartRenderer(renderers.BaseRenderer):
     """
-    Custom renderer.
-    Generates report in pdf with user's shopping cart.
+    Custom renderer for generating a PDF report of a user's shopping cart.
+
+    This renderer extends the BaseRenderer class from Django Rest Framework
+    to create a PDF document that lists the items in a user's shopping cart.
+    It uses the ReportLab library to generate the PDF and customizes the
+    appearance of the document, including the font and layout.
+
+    Attributes
+    ----------
+    media_type : str
+        The media type of the rendered content. Default is 'application/pdf'.
+    format : str
+        The format of the rendered content. Default is 'pdf'.
     """
-    media_type = 'application/pdf'
-    format = 'pdf'
+    media_type: str = 'application/pdf'
+    format: str = 'pdf'
 
     def render(
             self,
-            data: Iterable,
+            data: Any,
             accepted_media_type: Any = None,
             renderer_context: Any = None,
     ) -> bytes:
+        """
+        Renders the shopping cart data into a PDF document.
+
+        This method processes the shopping cart data, creates a PDF document
+        with a table listing the items, and returns the PDF content as bytes.
+
+        Parameters
+        ----------
+        data : Any
+            The shopping cart data to be rendered.
+        accepted_media_type : Any, optional
+            The media type that is acceptable for the response. Default is None.
+        renderer_context : Any, optional
+            The context for the renderer. Default is None.
+
+        Returns
+        -------
+        bytes
+            The rendered PDF content as bytes.
+
+        Raises
+        ------
+        NotImplementedError
+            If the render method is not implemented in the superclass.
+        """
         buffer: io.BytesIO = io.BytesIO()
 
         # Adding font supporting cyrillic letters.
