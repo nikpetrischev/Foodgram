@@ -1,11 +1,9 @@
 # Standard Library
-import io
 from http import HTTPStatus
 
 # Django Library
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
-from django.http import FileResponse
 from django_filters import rest_framework as drf_filters
 
 # DRF Library
@@ -18,10 +16,6 @@ from rest_framework.mixins import (
     RetrieveModelMixin,
 )
 from rest_framework.response import Response
-
-from reportlab.lib.units import cm
-from reportlab.pdfbase import pdfmetrics, ttfonts
-from reportlab.platypus.tables import Table, TableStyle
 
 # Local Imports
 from .filters import NameSearchFilter, RecipeFilter

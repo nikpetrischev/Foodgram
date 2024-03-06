@@ -59,7 +59,8 @@ class ShoppingCartRenderer(renderers.BaseRenderer):
         data : Any
             The shopping cart data to be rendered.
         accepted_media_type : Any, optional
-            The media type that is acceptable for the response. Default is None.
+            The media type that is acceptable for the response.
+            Default is None.
         renderer_context : Any, optional
             The context for the renderer. Default is None.
 

@@ -6,9 +6,11 @@ from rest_framework.response import Response
 
 class PatchNotPutModelMixin(UpdateModelMixin):
     """
-    A mixin to override the default behavior of the update method to use partial_update instead.
+    A mixin to override the default behavior
+    of the update method to use partial_update instead.
 
-    This mixin is useful when you want to use PATCH requests for partial updates instead of PUT,
+    This mixin is useful when you want to use PATCH requests
+    for partial updates instead of PUT,
     which is the default behavior in Django Rest Framework.
     """
 
@@ -21,7 +23,8 @@ class PatchNotPutModelMixin(UpdateModelMixin):
         """
         Handles partial updates of a model instance.
 
-        This method is overridden to use the update method from the UpdateModelMixin,
+        This method is overridden to use the update method
+        from the UpdateModelMixin,
         effectively treating PATCH requests as if they were PUT requests.
 
         Parameters

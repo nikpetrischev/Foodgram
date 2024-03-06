@@ -4,9 +4,10 @@ from django.db import models
 
 class NameAndStrAbstract(models.Model):
     """
-    An abstract base model for models with a name field and a string representation.
+    An abstract base model for models with a name field
+    and a string representation.
 
-    This model includes a 'name' field, which is a CharField with a maximum length of 200 characters.
+    This model includes a 'name' field, which is a CharField.
     It also defines a custom string representation for the model instances,
     which returns the value of the 'name' field.
     This abstract model can be used as a base class for other models

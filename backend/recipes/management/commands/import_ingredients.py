@@ -17,11 +17,13 @@ IMPORT_FILE = os.path.join(DATA_FOLDER, 'ingredients')
 
 class Command(BaseCommand):
     """
-    A Django management command for importing ingredients from a CSV or JSON file.
+    A Django management command for importing ingredients
+    from a CSV or JSON file.
 
-    This command provides functionality to import ingredients into the database
-    from a specified CSV or JSON file. It supports atomic transactions to ensure
-    data integrity during the import process.
+    This command provides functionality to import ingredients
+    into the database from a specified CSV or JSON file.
+    It supports atomic transactions to ensure data integrity
+    during the import process.
     """
     help = 'Импорт списка ингредиентов из .csv или .json'
     requires_migrations_checks = True

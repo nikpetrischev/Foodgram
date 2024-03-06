@@ -1,6 +1,6 @@
 # Standard Library
 import base64
-from typing import Any, TypeVar, Union
+from typing import Any, Union
 
 # Django Library
 from django.contrib.auth import get_user_model
@@ -31,8 +31,8 @@ class Hex2NameColor(serializers.Field):
     """
     A custom serializer field to convert hex color codes to their names.
 
-    This field is used to validate and convert hex color codes to their corresponding
-    color names using the `webcolors` library.
+    This field is used to validate and convert hex color codes
+    to their corresponding color names using the `webcolors` library.
     """
 
     def to_representation(self, value: str) -> str:
@@ -116,7 +116,8 @@ class IngredientSerializer(serializers.ModelSerializer):
     """
     A serializer for the Ingredient model.
 
-    This serializer includes the id, name, and measurement_unit fields of the Ingredient model.
+    This serializer includes the id, name,
+    and measurement_unit fields of the Ingredient model.
     """
 
     class Meta:
@@ -128,8 +129,9 @@ class TagSerializer(serializers.ModelSerializer):
     """
     A serializer for the Tag model.
 
-    This serializer includes the id, name, slug, and color fields of the Tag model.
-    The color field uses the Hex2NameColor field for validation and conversion.
+    This serializer includes the id, name, slug, and color fields
+    of the Tag model. The color field uses the Hex2NameColor field
+    for validation and conversion.
     """
     color = Hex2NameColor(required=True, allow_null=False)
     slug = serializers.SlugField(required=True, allow_null=False)
@@ -143,8 +145,9 @@ class IngredientsReadSerializer(serializers.ModelSerializer):
     """
     A read-only serializer for the RecipeIngredient model.
 
-    This serializer includes the id, name, and measurement_unit fields of the Ingredient model
-    through the RecipeIngredient model. It is used for read operations to display the ingredients
+    This serializer includes the id, name, and measurement_unit fields
+    of the Ingredient model through the RecipeIngredient model.
+    It is used for read operations to display the ingredients
     associated with a recipe.
     """
     id = serializers.ReadOnlyField(source='ingredient.id')
@@ -162,9 +165,11 @@ class IngredientsWriteSerializer(serializers.ModelSerializer):
     """
     A write-only serializer for the RecipeIngredient model.
 
-    This serializer includes the id and amount fields of the RecipeIngredient model.
-    The id field is used to reference the Ingredient model. It is used for write operations
-    to create or update ingredients associated with a recipe.
+    This serializer includes the id and amount fields
+    of the RecipeIngredient model.
+    The id field is used to reference the Ingredient model.
+    It is used for write operations to create or update ingredients associated
+    with a recipe.
     """
     id = serializers.IntegerField(source='ingredient')
 
@@ -178,7 +183,8 @@ class AbstractRecipeSerializer(serializers.ModelSerializer):
     An abstract base serializer for the Recipe model.
 
     This serializer includes a method to get the image URL.
-    It is intended to be subclassed by other serializers that need to serialize recipe data.
+    It is intended to be subclassed by other serializers
+    that need to serialize recipe data.
     """
     image = serializers.SerializerMethodField(
         method_name='get_image_url',
@@ -213,9 +219,10 @@ class ShortenedRecipeSerializer(AbstractRecipeSerializer):
     """
     A serializer for the Recipe model with a shortened set of fields.
 
-    This serializer includes a subset of the fields available in the Recipe model,
-    focusing on essential information such as id, name, image, and cooking_time.
-    It is used for operations where a concise representation of the recipe is needed.
+    This serializer includes a subset of the fields available
+    in the Recipe model, focusing on essential information such as
+    id, name, image, and cooking_time. It is used for operations
+    where a concise representation of the recipe is needed.
     """
     class Meta:
         model = Recipe
@@ -226,11 +233,13 @@ class ShortenedRecipeSerializer(AbstractRecipeSerializer):
 
 class RecipeReadSerializer(AbstractRecipeSerializer):
     """
-    A serializer for the Recipe model with additional fields for read operations.
+    A serializer for the Recipe model with additional fields
+    for read operations.
 
-    This serializer includes fields for tags, ingredients, and user-specific information
-    such as whether the recipe is favorited or in the shopping cart. It is used for read
-    operations to display detailed recipe information along with user-specific data.
+    This serializer includes fields for tags, ingredients,
+    and user-specific information such as whether the recipe is favorited
+    or in the shopping cart. It is used for read operations
+    to display detailed recipe information along with user-specific data.
     """
     tags = TagSerializer(many=True)
     ingredients = IngredientsReadSerializer(
@@ -274,7 +283,8 @@ class RecipeReadSerializer(AbstractRecipeSerializer):
         Returns
         -------
         bool
-            True if the recipe is favorited by the current user, False otherwise.
+            True if the recipe is favorited by the current user,
+            False otherwise.
         """
         try:
             user = self.context.get('request').user
@@ -301,7 +311,8 @@ class RecipeReadSerializer(AbstractRecipeSerializer):
         Returns
         -------
         bool
-            True if the recipe is in the current user's shopping cart, False otherwise.
+            True if the recipe is in the current user's shopping cart,
+            False otherwise.
         """
         try:
             user = self.context.get('request').user
@@ -321,8 +332,8 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     """
     A serializer for creating and updating Recipe instances.
 
-    This serializer includes fields for tags, ingredients, image, and author. It
-    handles the creation and updating of Recipe instances, including the
+    This serializer includes fields for tags, ingredients, image, and author.
+    It handles the creation and updating of Recipe instances, including the
     association of tags and ingredients.
     """
     tags = serializers.PrimaryKeyRelatedField(
@@ -354,8 +365,9 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         """
                 Save the Recipe instance.
 
-                This method sets the author of the Recipe instance to the current user
-                if it's not already set and then calls the superclass's save method.
+                This method sets the author of the Recipe instance
+                to the current user if it's not already set
+                and then calls the superclass's save method.
 
                 Parameters
                 ----------
@@ -498,7 +510,8 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         ------
         serializers.ValidationError
             If the ingredients field is empty, an ingredient does not exist in
-            the database, an ingredient is repeated, or the amount is less than 1.
+            the database, an ingredient is repeated,
+            or the amount is less than 1.
         """
         if not value or value == []:
             raise serializers.ValidationError(

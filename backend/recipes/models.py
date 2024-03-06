@@ -11,8 +11,9 @@ class Ingredient(NameAndStrAbstract):
     """
     A model representing an ingredient.
 
-    This model includes fields for the name of the ingredient and its measurement unit.
-    It inherits from NameAndStrAbstract, which provides a common structure for models
+    This model includes fields for the name of the ingredient
+    and its measurement unit. It inherits from NameAndStrAbstract,
+    which provides a common structure for models
     that have a name and a string representation.
     """
     measurement_unit = models.CharField(
@@ -44,8 +45,8 @@ class Tag(NameAndStrAbstract):
 
     This model includes fields for the name of the tag, a slug for URL-friendly
     identification, and a color represented as a hex code.
-    It inherits from NameAndStrAbstract, which provides a common structure for models
-    that have a name and a string representation.
+    It inherits from NameAndStrAbstract, which provides a common structure
+    for models that have a name and a string representation.
     """
     slug = models.SlugField(
         null=False,
@@ -72,9 +73,10 @@ class Recipe(NameAndStrAbstract):
     """
     A model representing a recipe.
 
-    This model includes fields for the author, image, text, ingredients, tags, and
-    cooking time. It also includes a many-to-many relationship with the Ingredient
-    and Tag models through the RecipeIngredient and RecipeTag models, respectively.
+    This model includes fields for the author, image, text, ingredients,
+    tags, and cooking time. It also includes a many-to-many relationship
+    with the Ingredient and Tag models through the RecipeIngredient
+    and RecipeTag models, respectively.
     """
     author = models.ForeignKey(
         to=CustomUser,
@@ -120,8 +122,9 @@ class RecipeIngredient(models.Model):
     """
     A model representing the relationship between a recipe and an ingredient.
 
-    This model includes fields for the recipe, ingredient, and amount of the ingredient
-    used in the recipe. It ensures that each recipe-ingredient pair is unique.
+    This model includes fields for the recipe, ingredient,
+    and amount of the ingredient used in the recipe.
+    It ensures that each recipe-ingredient pair is unique.
     """
     recipe = models.ForeignKey(
         to=Recipe,
@@ -204,9 +207,9 @@ class UserRecipe(models.Model):
     """
     A model representing a user's relationship with a recipe.
 
-    This model includes fields for the user, recipe, and flags indicating whether
-    the recipe is favorited or in the shopping cart. It ensures that each
-    user-recipe pair is unique.
+    This model includes fields for the user, recipe,
+    and flags indicating whether the recipe is favorited
+    or in the shopping cart. It ensures that each user-recipe pair is unique.
     """
     user = models.ForeignKey(
         to=CustomUser,

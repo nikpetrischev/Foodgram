@@ -9,16 +9,17 @@ class RecipePermission(permissions.BasePermission):
     This class extends the BasePermission class from Django Rest Framework
     to define custom permission checks for recipe-related views. It allows
     authenticated users to perform any request and ensures that only the author
-    of a recipe or users performing safe methods (GET, HEAD, OPTIONS) can access
-    or modify the recipe.
+    of a recipe or users performing safe methods (GET, HEAD, OPTIONS)
+    can access or modify the recipe.
     """
 
     def has_permission(self, request, view):
         """
         Determines if the request has permission to access the view.
 
-        This method checks if the request method is a safe method (GET, HEAD, OPTIONS)
-        or if the user is authenticated. Safe methods are allowed for all users,
+        This method checks if the request method is a safe method
+        (GET, HEAD, OPTIONS) or if the user is authenticated.
+        Safe methods are allowed for all users,
         while authenticated users can perform any request.
 
         Parameters
@@ -31,7 +32,8 @@ class RecipePermission(permissions.BasePermission):
         Returns
         -------
         bool
-            True if the request has permission to access the view, False otherwise.
+            True if the request has permission to access the view,
+            False otherwise.
         """
         return (
             request.method in permissions.SAFE_METHODS
@@ -44,7 +46,8 @@ class RecipePermission(permissions.BasePermission):
 
         This method checks if the user is the author of the recipe or if the
         request method is a safe method (GET, HEAD, OPTIONS). Only the author
-        of a recipe or users performing safe methods can access or modify the recipe.
+        of a recipe or users performing safe methods
+        can access or modify the recipe.
 
         Parameters
         ----------
@@ -58,7 +61,8 @@ class RecipePermission(permissions.BasePermission):
         Returns
         -------
         bool
-            True if the request has permission to access the object, False otherwise.
+            True if the request has permission to access the object,
+            False otherwise.
         """
         return (
             obj.author == request.user
