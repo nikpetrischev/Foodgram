@@ -59,7 +59,6 @@ class CartsAndFavoritesAdmin(admin.ModelAdmin):
         'in_shopping_cart',
     ]
     list_filter = ['user']
-    verbose_name = 'Избранное и корзина'
 
     @admin.display(
         boolean=True,
