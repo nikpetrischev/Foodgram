@@ -1,5 +1,6 @@
 # Standard Library
 from http import HTTPStatus
+from typing import Optional
 
 # Django Library
 from django.contrib.auth import get_user_model
@@ -7,7 +8,7 @@ from django.db.models import Sum
 from django_filters import rest_framework as drf_filters
 
 # DRF Library
-from rest_framework import permissions, viewsets
+from rest_framework import permissions
 from rest_framework.decorators import action
 from rest_framework.mixins import (
     CreateModelMixin,
@@ -15,7 +16,9 @@ from rest_framework.mixins import (
     ListModelMixin,
     RetrieveModelMixin,
 )
+from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 
 # Local Imports
 from .filters import NameSearchFilter, RecipeFilter
@@ -29,19 +32,22 @@ from .serializers import (
     ShortenedRecipeSerializer,
     TagSerializer,
 )
-from recipes.models import (
-    Ingredient,
-    Recipe,
-    RecipeIngredient,
-    Tag,
-    UserRecipe,
+from .utils import (
+    check_field_in_user_recipe,
+    get_recipe_or_error,
+    uncheck_field_in_user_recipe,
 )
-from users.serializers import FavouritesOrCartSerializer
+from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
 
 User = get_user_model()
 
 
-class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+class IngredientViewSet(ReadOnlyModelViewSet):
+    """
+    A viewset for viewing ingredients.
+
+    This viewset provides read-only access to the Ingredient model.
+    """
     serializer_class = IngredientSerializer
     queryset = Ingredient.objects.order_by('id')
     filter_backends = [drf_filters.DjangoFilterBackend]
@@ -51,24 +57,42 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class RecipeViewSet(
-    viewsets.GenericViewSet,
+    GenericViewSet,
     CreateModelMixin,
     DestroyModelMixin,
     ListModelMixin,
     RetrieveModelMixin,
     PatchNotPutModelMixin,
 ):
+    """
+    A viewset for managing recipes.
+
+    This viewset provides CRUD operations for the Recipe model, including
+    custom actions for favoriting and adding recipes to the shopping cart.
+    """
     queryset = Recipe.objects.order_by('id')
     filter_backends = [drf_filters.DjangoFilterBackend]
     filterset_class = RecipeFilter
     permission_classes = [RecipePermission]
 
     def get_serializer_class(self):
+        """
+        Returns the appropriate serializer class based on the request method.
+
+        Returns:
+            The serializer class to use for the request.
+        """
         if self.request.method in ['GET']:
             return RecipeReadSerializer
         return RecipeWriteSerializer
 
     def perform_create(self, serializer):
+        """
+        Sets the author of the recipe to the current user upon creation.
+
+        Args:
+            serializer: The serializer for the recipe.
+        """
         serializer.save(author=self.request.user)
 
     @action(
@@ -76,131 +100,69 @@ class RecipeViewSet(
         detail=True,
         permission_classes=[permissions.IsAuthenticated],
     )
-    def favorite(self, request, pk=None):
-        recipe = Recipe.objects.filter(pk=pk).first()
-        if not recipe:
-            return Response(
-                {'errors': 'Рецепт не найден'},
-                status=HTTPStatus.BAD_REQUEST,
-            )
-        favorite_item, _ = UserRecipe.objects.get_or_create(
-            user=request.user,
-            recipe=recipe,
+    def favorite(
+            self,
+            request: Request,
+            pk: int = None,
+    ) -> Response:
+        """
+        Adds a recipe to the user's favorites.
+
+        Args:
+            request: The request object.
+            pk: The primary key of the recipe to favorite.
+
+        Returns:
+            A response indicating success or failure.
+        """
+        recipe, error = get_recipe_or_error(pk)
+        # type: Optional[Recipe], Optional[Response]
+        if error:
+            return error
+
+        errors: Optional[Response] = check_field_in_user_recipe(
+            request.user,
+            recipe,
+            is_favorited=True,
         )
-        if favorite_item.is_favorited:
-            return Response(
-                {'errors': f'"{recipe.name}" уже в избранном'},
-                status=HTTPStatus.BAD_REQUEST,
-            )
-        serializer = FavouritesOrCartSerializer(
-            favorite_item,
-            data={'is_favorited': True},
-            partial=True,
-        )
-        if serializer.is_valid():
-            serializer.save()
-            return Response(
-                ShortenedRecipeSerializer(recipe).data,
-                status=HTTPStatus.CREATED,
-            )
+        if errors:
+            return errors
+
         return Response(
-            serializer.errors,
-            status=HTTPStatus.BAD_REQUEST,
+            ShortenedRecipeSerializer(recipe).data,
+            status=HTTPStatus.CREATED,
         )
 
     @favorite.mapping.delete
-    def favorite_delete(self, request, pk=None):
-        recipe = Recipe.objects.filter(pk=pk).first()
-        if not recipe:
-            return Response(
-                {'errors': 'Рецепт не найден'},
-                status=HTTPStatus.NOT_FOUND,
-            )
+    def favorite_delete(
+            self,
+            request: Request,
+            pk: int = None,
+    ) -> Response:
+        """
+        Removes a recipe from the user's favorites.
 
-        favorite_item = UserRecipe.objects.filter(
-            user=request.user,
-            recipe=recipe,
-            is_favorited=True,
-        ).first()
-        if not favorite_item:
-            return Response(
-                {'errors': f'"{recipe.name}" нет в избранном'},
-                status=HTTPStatus.BAD_REQUEST,
-            )
+        Args:
+            request: The request object.
+            pk: The primary key of the recipe to remove from favorites.
 
-        serializer = FavouritesOrCartSerializer(
-            favorite_item,
-            data={'is_favorited': False},
-            partial=True,
+        Returns:
+            A response indicating success or failure.
+        """
+        recipe, error = get_recipe_or_error(pk)
+        # type: Optional[Recipe], Optional[Response]
+        if error:
+            return error
+
+        errors: Optional[Response] = uncheck_field_in_user_recipe(
+            request.user,
+            recipe,
+            from_favorited=True,
         )
-        if serializer.is_valid():
-            serializer.save()
-            return Response(status=HTTPStatus.NO_CONTENT)
+        if errors:
+            return errors
 
-        return Response(
-            serializer.errors,
-            status=HTTPStatus.BAD_REQUEST,
-        )
-
-    # @staticmethod
-    # def create_pdf(cart_data):
-    #     buffer = io.BytesIO()
-    #
-    #     pdfmetrics.registerFont(
-    #         ttfonts.TTFont(
-    #             'DejaVuSerif',
-    #             './static/font/DejaVuSerif.ttf',
-    #         ),
-    #     )
-    #
-    #     cart_list = [('Продукт', 'Ед.изм.', 'Кол-во')]
-    #     for item in cart_data:
-    #         cart_list.append(
-    #             (
-    #                 item['ingredient__name'],
-    #                 item['ingredient__measurement_unit'],
-    #                 item['total'],
-    #             ),
-    #         )
-    #     table = Table(cart_list, colWidths=(20 * cm, 3 * cm, 5 * cm))
-    #
-    #     table.setStyle(
-    #         TableStyle(
-    #             [
-    #                 ('GRID', (0, 0), (-1, -1), 1, (0, 0, 0)),
-    #                 ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
-    #                 ('FONTNAME', (0, 0), (-1, 0), 'DejaVuSerif', 18),
-    #                 ('BACKGROUND', (0, 0), (-1, 0), (0, 0, 0)),
-    #                 ('TEXTCOLOR', (0, 0), (-1, 0), (1, 1, 1)),
-    #                 ('LINEBEFORE', (1, 0), (1, 0), 2, (1, 1, 1)),
-    #                 ('LINEBEFORE', (2, 0), (2, 0), 2, (1, 1, 1)),
-    #                 ('FONTNAME', (0, 1), (-1, -1), 'DejaVuSerif'),
-    #                 (
-    #                     'ROWBACKGROUNDS',
-    #                     (0, 1),
-    #                     (-1, -1),
-    #                     [(1, 1, 1), (210 / 255, 210 / 255, 210 / 255)],
-    #                 ),
-    #             ],
-    #         ),
-    #     )
-    #
-    #     from reportlab.pdfgen import canvas
-    #
-    #     page = canvas.Canvas(buffer)
-    #     table.wrapOn(page, 2.5 * cm, 2.5 * cm)
-    #     table.drawOn(page, 2.5 * cm, 2.5 * cm)
-    #
-    #     page.save()
-    #
-    #     buffer.seek(0)
-    #     response = FileResponse(
-    #         buffer,
-    #         as_attachment=True,
-    #         filename='shopping_list.pdf',
-    #     )
-    #     breakpoint()
-    #     return response
+        return Response(status=HTTPStatus.NO_CONTENT)
 
     @action(
         methods=['get'],
@@ -208,13 +170,22 @@ class RecipeViewSet(
         permission_classes=[permissions.IsAuthenticated],
         renderer_classes=[ShoppingCartRenderer],
     )
-    def download_shopping_cart(self, request):
-        recipes = Recipe.objects.filter(
+    def download_shopping_cart(self, request: Request) -> Response:
+        """
+        Downloads the user's shopping cart as a PDF.
+
+        Args:
+            request: The request object.
+
+        Returns:
+            A response with the shopping cart PDF.
+        """
+        recipes: Recipe = Recipe.objects.filter(
             userrecipe__user=request.user,
             userrecipe__is_in_shopping_cart=True,
         )
 
-        ingredients = (
+        ingredients: RecipeIngredient = (
             RecipeIngredient.objects.filter(recipe__in=recipes)
             .values(
                 'ingredient__name',
@@ -223,7 +194,7 @@ class RecipeViewSet(
             .annotate(total=Sum('amount'))
         )
 
-        response = Response(
+        response: Response = Response(
             data=ingredients,
             headers={
                 'Content-Disposition':
@@ -240,77 +211,77 @@ class RecipeViewSet(
         detail=True,
         permission_classes=[permissions.IsAuthenticated],
     )
-    def shopping_cart(self, request, pk=None):
-        recipe = Recipe.objects.filter(pk=pk).first()
-        if not recipe:
-            return Response(
-                {'errors': 'Рецепт не найден'},
-                status=HTTPStatus.BAD_REQUEST,
-            )
+    def shopping_cart(
+            self,
+            request: Request,
+            pk: int = None,
+    ) -> Response:
+        """
+        Adds a recipe to the user's shopping cart.
 
-        cart_item, _ = UserRecipe.objects.get_or_create(
-            user=request.user,
-            recipe=recipe,
-        )
-        if cart_item.is_in_shopping_cart:
-            return Response(
-                {'errors': f'"{recipe.name}" уже в корзине'},
-                status=HTTPStatus.BAD_REQUEST,
-            )
+        Args:
+            request: The request object.
+            pk: The primary key of the recipe to add to the shopping cart.
 
-        serializer = FavouritesOrCartSerializer(
-            cart_item,
-            data={'is_in_shopping_cart': True},
-            partial=True,
+        Returns:
+            A response indicating success or failure.
+        """
+        recipe, error = get_recipe_or_error(pk)
+        # type: Optional[Recipe], Optional[Response]
+        if error:
+            return error
+
+        errors: Optional[Response] = check_field_in_user_recipe(
+            request.user,
+            recipe,
+            is_in_shopping_cart=True,
         )
-        if serializer.is_valid():
-            serializer.save()
-            return Response(
-                ShortenedRecipeSerializer(recipe).data,
-                status=HTTPStatus.CREATED,
-            )
+        if errors:
+            return errors
 
         return Response(
-            serializer.errors,
-            status=HTTPStatus.BAD_REQUEST,
+            ShortenedRecipeSerializer(recipe).data,
+            status=HTTPStatus.CREATED,
         )
 
     @shopping_cart.mapping.delete
-    def shopping_cart_delete(self, request, pk=None):
-        recipe = Recipe.objects.filter(pk=pk).first()
-        if not recipe:
-            return Response(
-                {'errors': 'Рецепт не найден'},
-                status=HTTPStatus.NOT_FOUND,
-            )
+    def shopping_cart_delete(
+            self,
+            request: Request,
+            pk: int = None,
+    ) -> Response:
+        """
+        Removes a recipe from the user's shopping cart.
 
-        cart_item = UserRecipe.objects.filter(
-            user=request.user,
-            recipe=recipe,
-            is_in_shopping_cart=True,
-        ).first()
-        if not cart_item:
-            return Response(
-                {'errors': f'"{recipe.name}" нет в корзине'},
-                status=HTTPStatus.BAD_REQUEST,
-            )
+        Args:
+            request: The request object.
+            pk: The primary key of the recipe to remove from the shopping cart.
 
-        serializer = FavouritesOrCartSerializer(
-            cart_item,
-            data={'is_in_shopping_cart': False},
-            partial=True,
+        Returns:
+            A response indicating success or failure.
+        """
+        recipe, error = get_recipe_or_error(pk)
+        # type: Optional[Recipe], Optional[Response]
+        if error:
+            return error
+
+        errors: Optional[Response] = uncheck_field_in_user_recipe(
+            request.user,
+            recipe,
+            from_shopping_cart=True,
         )
-        if serializer.is_valid():
-            serializer.save()
-            return Response(status=HTTPStatus.NO_CONTENT)
+        if errors:
+            return errors
 
-        return Response(
-            serializer.errors,
-            status=HTTPStatus.BAD_REQUEST,
-        )
+        return Response(status=HTTPStatus.NO_CONTENT)
 
 
-class TagViewSet(viewsets.ReadOnlyModelViewSet):
+class TagViewSet(ReadOnlyModelViewSet):
+    """
+    A viewset for viewing tags.
+
+    This viewset provides read-only access to the Tag model.
+    """
     queryset = Tag.objects.order_by('id')
     serializer_class = TagSerializer
     permission_classes = [permissions.AllowAny]
