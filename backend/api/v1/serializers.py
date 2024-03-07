@@ -361,7 +361,6 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         )
 
     def save(self, **kwargs: Any) -> Recipe:
-        # noinspection GrazieInspection
         """
                 Save the Recipe instance.
 
