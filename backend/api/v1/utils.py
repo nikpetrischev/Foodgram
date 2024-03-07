@@ -40,7 +40,7 @@ def get_recipe_or_error(
     """
     recipe: Recipe = Recipe.objects.filter(pk=pk).first()
     if not recipe:
-        return None, error_response('Рецепт не найден', HTTPStatus.NOT_FOUND)
+        return None, error_response('Рецепт не найден')
     return recipe, None
 
 

@@ -447,6 +447,8 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         instance.image = validated_data.get('image', instance.image)
 
         if 'ingredients' in validated_data:
+            RecipeIngredient.objects.filter(recipe=instance).delete()
+
             ingredients: dict = validated_data.pop('ingredients')
             for ingredient in ingredients:
                 ingredient_obj = get_object_or_404(
@@ -460,6 +462,8 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
                 )
 
         if 'tags' in validated_data:
+            RecipeTag.objects.filter(recipe=instance).delete()
+
             tags: list = validated_data.pop('tags')
             for tag in tags:
                 current_tag, _ = RecipeTag.objects.get_or_create(
