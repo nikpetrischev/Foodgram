@@ -1,0 +1,10 @@
+# flake8: noqa
+# Standard Library
+import os
+
+# Django Library
+from django.core.asgi import get_asgi_application
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'foodgram_backend.settings')
+
+application = get_asgi_application()
