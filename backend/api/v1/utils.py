@@ -15,6 +15,9 @@ def error_response(
         error_message: Union[str, dict, None] = None,
         status_code: HTTPStatus = HTTPStatus.BAD_REQUEST,
 ) -> Response:
+    """
+    Generate response with zero or more implicit errors and status code.
+    """
     if isinstance(error_message, dict):
         response: Response = Response(data=error_message, status=status_code)
     else:
