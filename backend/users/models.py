@@ -4,10 +4,18 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import F, Q
 
+from constants import (
+    USERNAME_LENGTH,
+    PASSWORD_LENGTH,
+    EMAIL_LENGTH,
+    FIRSTNAME_LENGTH,
+    LASTNAME_LENGTH,
+)
+
 
 class CustomUser(AbstractUser):
     username = models.CharField(
-        max_length=150,
+        max_length=USERNAME_LENGTH,
         unique=True,
         null=False,
         blank=False,
@@ -15,25 +23,25 @@ class CustomUser(AbstractUser):
         validators=(RegexValidator(r'^[\w.@+-]+\Z'),),
     )
     password = models.CharField(
-        max_length=150,
+        max_length=PASSWORD_LENGTH,
         null=False,
         blank=False,
         verbose_name='Пароль',
     )
     first_name = models.CharField(
-        max_length=150,
+        max_length=FIRSTNAME_LENGTH,
         null=False,
         blank=False,
         verbose_name='Имя',
     )
     last_name = models.CharField(
-        max_length=150,
+        max_length=LASTNAME_LENGTH,
         null=False,
         blank=False,
         verbose_name='Фамилия',
     )
     email = models.EmailField(
-        max_length=254,
+        max_length=EMAIL_LENGTH,
         unique=True,
         null=False,
         blank=False,

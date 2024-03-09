@@ -1,5 +1,6 @@
 # Standard Library
 import base64
+from http import HTTPStatus
 from typing import Any, Union
 
 # Django Library
@@ -11,70 +12,23 @@ from django.shortcuts import get_object_or_404
 # DRF Library
 from rest_framework import serializers
 
-import webcolors
-
 # Local Imports
+from .fields import Hex2NameColorField
+from constants import (
+    MIN_AMOUNT,
+    MAX_AMOUNT,
+)
 from recipes.models import (
     Ingredient,
     Recipe,
     RecipeIngredient,
     RecipeTag,
     Tag,
-    UserRecipe,
 )
+from utils import set_recipe_tag, set_recipe_ingredient
 from users.serializers import UserSerializer
 
 User = get_user_model()
-
-
-class Hex2NameColor(serializers.Field):
-    """
-    A custom serializer field to convert hex color codes to their names.
-
-    This field is used to validate and convert hex color codes
-    to their corresponding color names using the `webcolors` library.
-    """
-
-    def to_representation(self, value: str) -> str:
-        """
-        Display color's hex value.
-
-        Parameters
-        ----------
-        value : str
-            The internal color's value.
-
-        Returns
-        -------
-        str
-            The represented value.
-        """
-        return value
-
-    def to_internal_value(self, data: str) -> str:
-        """
-        Convert the input data to the internal value.
-
-        Parameters
-        ----------
-        data : str
-            The input data to convert.
-
-        Returns
-        -------
-        str
-            The converted internal value.
-
-        Raises
-        ------
-        serializers.ValidationError
-            If the input data cannot be converted to a color name.
-        """
-        try:
-            data: str = webcolors.hex_to_name(data)
-        except ValueError:
-            raise serializers.ValidationError('Не найдено имя для цвета')
-        return data
 
 
 class Base64ImageField(serializers.ImageField):
@@ -133,7 +87,7 @@ class TagSerializer(serializers.ModelSerializer):
     of the Tag model. The color field uses the Hex2NameColor field
     for validation and conversion.
     """
-    color = Hex2NameColor(required=True, allow_null=False)
+    color = Hex2NameColorField(required=True, allow_null=False)
     slug = serializers.SlugField(required=True, allow_null=False)
 
     class Meta:
@@ -172,6 +126,10 @@ class IngredientsWriteSerializer(serializers.ModelSerializer):
     with a recipe.
     """
     id = serializers.IntegerField(source='ingredient')
+    amount = serializers.IntegerField(
+        min_value=MIN_AMOUNT,
+        max_value=MAX_AMOUNT,
+    )
 
     class Meta:
         model = RecipeIngredient
@@ -287,11 +245,8 @@ class RecipeReadSerializer(AbstractRecipeSerializer):
             False otherwise.
         """
         try:
-            user = self.context.get('request').user
-            user_recipe = UserRecipe.objects.get(
-                recipe=obj.id,
-                user=user.id,
-            )
+            user_recipe = (obj.userrecipe_set
+                           .get(user=self.context.get('request').user.id))
         # Using wide Exception because it doesn't matter which one we get.
         # Any Exception will mean that recipe is not favorited at the least.
         except Exception:
@@ -315,11 +270,8 @@ class RecipeReadSerializer(AbstractRecipeSerializer):
             False otherwise.
         """
         try:
-            user = self.context.get('request').user
-            user_recipe = UserRecipe.objects.get(
-                recipe=obj.id,
-                user=user.id,
-            )
+            user_recipe = (obj.userrecipe_set
+                           .get(user=self.context.get('request').user.id))
         # Using wide Exception because it doesn't matter which one we get.
         # Any Exception will mean that recipe is not in cart at the least.
         except Exception:
@@ -401,22 +353,12 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         """
         tags: list = validated_data.pop('tags')
         ingredients: dict = validated_data.pop('ingredients')
-        recipe: Recipe = Recipe.objects.create(**validated_data)
-        for tag in tags:
-            RecipeTag.objects.create(
-                recipe=recipe,
-                tag=tag,
-            )
-        for ingredient in ingredients:
-            current_ingredient = get_object_or_404(
-                Ingredient,
-                pk=ingredient.get('ingredient'),
-            )
-            RecipeIngredient.objects.create(
-                recipe=recipe,
-                ingredient=current_ingredient,
-                amount=ingredient.get('amount'),
-            )
+        recipe: Recipe = super().create(validated_data)
+
+        set_recipe_tag(recipe, tags)
+
+        set_recipe_ingredient(ingredients, recipe)
+
         return recipe
 
     def update(self, instance: Recipe, validated_data: dict) -> Recipe:
@@ -446,30 +388,13 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         instance.text = validated_data.get('text', instance.text)
         instance.image = validated_data.get('image', instance.image)
 
-        if 'ingredients' in validated_data:
-            RecipeIngredient.objects.filter(recipe=instance).delete()
+        RecipeIngredient.objects.filter(recipe=instance).delete()
+        ingredients: dict = validated_data.pop('ingredients')
+        set_recipe_ingredient(instance, ingredients)
 
-            ingredients: dict = validated_data.pop('ingredients')
-            for ingredient in ingredients:
-                ingredient_obj = get_object_or_404(
-                    Ingredient,
-                    pk=ingredient.get('ingredient'),
-                )
-                curr_ingredient, _ = RecipeIngredient.objects.get_or_create(
-                    recipe=instance,
-                    ingredient=ingredient_obj,
-                    amount=ingredient.get('amount'),
-                )
-
-        if 'tags' in validated_data:
-            RecipeTag.objects.filter(recipe=instance).delete()
-
-            tags: list = validated_data.pop('tags')
-            for tag in tags:
-                current_tag, _ = RecipeTag.objects.get_or_create(
-                    recipe=instance,
-                    tag=tag,
-                )
+        RecipeTag.objects.filter(recipe=instance).delete()
+        tags: list = validated_data.pop('tags')
+        set_recipe_tag(instance, tags)
 
         instance.save()
         return instance
@@ -516,12 +441,12 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             the database, an ingredient is repeated,
             or the amount is less than 1.
         """
-        if not value or value == []:
+        if not value:
             raise serializers.ValidationError(
                 'Поле \'Ингредиенты\' обязательно',
-                code=400,
+                code=HTTPStatus.BAD_REQUEST,
             )
-        ingredient_ids: list = []
+
         for ingredient in value:
             try:
                 Ingredient.objects.get(
@@ -530,20 +455,28 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             except exceptions.ObjectDoesNotExist:
                 raise serializers.ValidationError(
                     'Ингредиент не найден в базе',
-                    code=400,
+                    code=HTTPStatus.BAD_REQUEST,
                 )
-            if ingredient['amount'] < 1:
+
+            if ingredient['amount'] < MIN_AMOUNT:
                 raise serializers.ValidationError(
-                    'Минимальное кол-во ингредиента - 1',
-                    code=400,
+                    f'Минимальное кол-во ингредиента - {MIN_AMOUNT}',
+                    code=HTTPStatus.BAD_REQUEST,
                 )
-            if ingredient['ingredient'] in ingredient_ids:
+
+            if ingredient['amount'] > MAX_AMOUNT:
+                raise serializers.ValidationError(
+                    f'Максимальное кол-во ингредиента - {MAX_AMOUNT}',
+                    code=HTTPStatus.BAD_REQUEST,
+                )
+
+            ingredient_ids = {v['ingredient'] for v in value}
+            if len(ingredient_ids) != len(value):
                 raise serializers.ValidationError(
                     'Повтор ингредиента',
-                    code=400,
+                    code=HTTPStatus.BAD_REQUEST,
                 )
-            else:
-                ingredient_ids.append(ingredient['ingredient'])
+
         return value
 
     @staticmethod
@@ -570,27 +503,17 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             If the tags field is empty, a tag does not exist in the database,
             or a tag is repeated.
         """
-        if not value or value == []:
+        if not value:
             raise serializers.ValidationError(
                 'Поле \'Теги\' обязательно',
-                code=400,
+                code=HTTPStatus.BAD_REQUEST,
             )
-        tag_ids: list = []
-        for tag in value:
-            try:
-                Tag.objects.get(
-                    pk=tag.id,
-                )
-            except exceptions.ObjectDoesNotExist:
-                raise serializers.ValidationError(
-                    'Тег не найден в базе',
-                    code=400,
-                )
-            if tag.id in tag_ids:
-                raise serializers.ValidationError(
-                    'Повтор тега',
-                    code=400,
-                )
-            else:
-                tag_ids.append(tag.id)
+
+        tag_ids = {v.id for v in value}
+        if len(tag_ids) != len(value):
+            raise serializers.ValidationError(
+                'Повтор тега',
+                code=HTTPStatus.BAD_REQUEST,
+            )
+
         return value

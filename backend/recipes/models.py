@@ -1,10 +1,22 @@
 # Django Library
-from django.core.validators import MinValueValidator, RegexValidator
+from django.core.validators import (
+    MaxValueValidator,
+    MinValueValidator,
+    RegexValidator,
+)
 from django.db import models
 
 # Local Imports
 from .mixins import NameAndStrAbstract
 from users.models import CustomUser
+from constants import (
+    MEASUREMENT_UNIT_LENGTH,
+    COLOR_LENGTH,
+    MIN_COOKING_TIME,
+    MAX_COOKING_TIME,
+    MIN_AMOUNT,
+    MAX_AMOUNT,
+)
 
 
 class Ingredient(NameAndStrAbstract):
@@ -19,7 +31,7 @@ class Ingredient(NameAndStrAbstract):
     measurement_unit = models.CharField(
         blank=False,
         null=False,
-        max_length=32,
+        max_length=MEASUREMENT_UNIT_LENGTH,
         verbose_name='Единицы измерения',
     )
 
@@ -55,11 +67,11 @@ class Tag(NameAndStrAbstract):
         verbose_name='Идентификатор',
     )
     color = models.CharField(
-        validators=[
+        validators=(
             # Requires color code in hex starting with #
             RegexValidator(r'^#[a-fA-F0-9]{6}$'),
-        ],
-        max_length=7,
+        ),
+        max_length=COLOR_LENGTH,
         null=False,
         verbose_name='Цвет тега',
     )
@@ -108,7 +120,10 @@ class Recipe(NameAndStrAbstract):
     )
     cooking_time = models.IntegerField(
         null=False,
-        validators=[MinValueValidator(1)],
+        validators=(
+            MinValueValidator(MIN_COOKING_TIME),
+            MaxValueValidator(MAX_COOKING_TIME),
+        ),
         blank=False,
         verbose_name='Время на приготовление (мин.)',
     )
@@ -136,21 +151,25 @@ class RecipeIngredient(models.Model):
         on_delete=models.CASCADE,
         related_name='ingredients_for_recipe',
     )
-    amount = models.FloatField(
+    amount = models.IntegerField(
         null=False,
         blank=False,
-        validators=[MinValueValidator(0)],
+        validators=(
+            MinValueValidator(MIN_AMOUNT),
+            MaxValueValidator(MAX_AMOUNT),
+        ),
         verbose_name='Количество',
     )
-    objects = models.Manager()
 
     class Meta:
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
-                fields=['recipe', 'ingredient'],
+                fields=('recipe', 'ingredient'),
                 name='no_same_ingredients',
             ),
-        ]
+        )
+        verbose_name = 'Состав'
+        verbose_name_plural = 'состав'
 
     def __str__(self):
         """
@@ -161,9 +180,8 @@ class RecipeIngredient(models.Model):
         str
             A string in the format "ingredient_name: amount measurement_unit".
         """
-        ingredient = Ingredient.objects.get(pk=self.ingredient.id)
-        return (f'{ingredient.name}: '
-                + f'{self.amount} {ingredient.measurement_unit}')
+        return (f'{self.ingredient.name}: '
+                + f'{self.amount} {self.ingredient.measurement_unit}')
 
 
 class RecipeTag(models.Model):
@@ -181,15 +199,16 @@ class RecipeTag(models.Model):
         to=Tag,
         on_delete=models.CASCADE,
     )
-    objects = models.Manager()
 
     class Meta:
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
-                fields=['recipe', 'tag'],
+                fields=('recipe', 'tag'),
                 name='no_same_tags',
             ),
-        ]
+        )
+        verbose_name = 'Теги'
+        verbose_name_plural = 'теги'
 
     def __str__(self):
         """
@@ -233,15 +252,14 @@ class UserRecipe(models.Model):
         verbose_name='В корзине',
         default=False,
     )
-    objects = models.Manager()
 
     class Meta:
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
-                fields=['user', 'recipe'],
+                fields=('user', 'recipe'),
                 name='unique_favourites',
-            )
-        ]
+            ),
+        )
         verbose_name = 'Рецепт'
         verbose_name_plural = 'избранное'
 

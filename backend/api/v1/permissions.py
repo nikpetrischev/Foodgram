@@ -1,70 +1,50 @@
-# DRF Library
 from rest_framework import permissions
+from rest_framework.request import Request
+from rest_framework.views import View
+from rest_framework.permissions import SAFE_METHODS
+
+from recipes.models import Recipe
 
 
-class RecipePermission(permissions.BasePermission):
+class AuthorOrReadOnly(permissions.BasePermission):
     """
-    A custom permission class for handling permissions on recipe-related views.
-
-    This class extends the BasePermission class from Django Rest Framework
-    to define custom permission checks for recipe-related views. It allows
-    authenticated users to perform any request and ensures that only the author
-    of a recipe or users performing safe methods (GET, HEAD, OPTIONS)
-    can access or modify the recipe.
+    Custom permission class for Recipe model.
     """
 
-    def has_permission(self, request, view):
+    def has_permission(self, request: Request, view: View) -> bool:
         """
-        Determines if the request has permission to access the view.
+        Check if the request has permission to perform the action.
 
-        This method checks if the request method is a safe method
-        (GET, HEAD, OPTIONS) or if the user is authenticated.
-        Safe methods are allowed for all users,
-        while authenticated users can perform any request.
+        Args:
+            request (Request): The request instance.
+            view (View): The view instance.
 
-        Parameters
-        ----------
-        request : rest_framework.request.Request
-            The request object.
-        view : rest_framework.views.APIView
-            The view that the request is being made to.
-
-        Returns
-        -------
-        bool
-            True if the request has permission to access the view,
+        Returns:
+            bool: True if the request method is in SAFE_METHODS,
             False otherwise.
         """
         return (
-            request.method in permissions.SAFE_METHODS
-            or request.user.is_authenticated
+                request.method in SAFE_METHODS
+                or request.user.is_authenticated
         )
 
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(
+            self,
+            request: Request,
+            view: View,
+            obj: Recipe,
+    ) -> bool:
         """
-        Determines if the request has permission to access a specific object.
+        Check if the request has permission to perform the action
+        on the given object.
 
-        This method checks if the user is the author of the recipe or if the
-        request method is a safe method (GET, HEAD, OPTIONS). Only the author
-        of a recipe or users performing safe methods
-        can access or modify the recipe.
+        Args:
+            request (Request): The request instance.
+            view (View): The view instance.
+            obj (Recipe): The object the request is acting upon.
 
-        Parameters
-        ----------
-        request : rest_framework.request.Request
-            The request object.
-        view : rest_framework.views.APIView
-            The view that the request is being made to.
-        obj : Any
-            The object the request is being made to.
-
-        Returns
-        -------
-        bool
-            True if the request has permission to access the object,
-            False otherwise.
+        Returns:
+            bool: True if the request method is in SAFE_METHODS
+            or the object's author is the request user, False otherwise.
         """
-        return (
-            obj.author == request.user
-            or request.method in permissions.SAFE_METHODS
-        )
+        return obj.author == request.user or request.method in SAFE_METHODS

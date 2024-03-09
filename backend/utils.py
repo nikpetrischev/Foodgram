@@ -6,7 +6,8 @@ from typing import Optional, Union
 from rest_framework.response import Response
 
 # Local Imports
-from recipes.models import Recipe, UserRecipe
+
+from recipes.models import Recipe, UserRecipe, RecipeTag, RecipeIngredient, Ingredient
 from users.models import CustomUser
 from users.serializers import FavouritesOrCartSerializer
 
@@ -126,3 +127,73 @@ def uncheck_field_in_user_recipe(
         return None
 
     return error_response(serializer.errors)
+
+
+def check_favorite_or_cart(
+        pk,
+        request,
+        is_favorited=None,
+        is_in_shopping_cart=None,
+):
+    # Evading circular importing
+    from api.v1.serializers import ShortenedRecipeSerializer
+
+    recipe, error = get_recipe_or_error(pk)
+    # type: Optional[Recipe], Optional[Response]
+    if error:
+        return error
+    errors: Optional[Response] = check_field_in_user_recipe(
+        request.user,
+        recipe,
+        is_favorited,
+        is_in_shopping_cart,
+    )
+    if errors:
+        return errors
+    return Response(
+        ShortenedRecipeSerializer(recipe).data,
+        status=HTTPStatus.CREATED,
+    )
+
+
+def uncheck_favorite_or_cart(
+        pk,
+        request,
+        from_favorited=None,
+        from_shopping_cart=None,
+):
+    recipe, error = get_recipe_or_error(pk)
+    # type: Optional[Recipe], Optional[Response]
+    if error:
+        return error
+
+    errors: Optional[Response] = uncheck_field_in_user_recipe(
+        request.user,
+        recipe,
+        from_favorited,
+        from_shopping_cart,
+    )
+    if errors:
+        return errors
+
+    return Response(status=HTTPStatus.NO_CONTENT)
+
+
+def set_recipe_tag(recipe, tags):
+    recipe_tag = [RecipeTag(tag=tag, recipe=recipe) for tag in tags]
+    RecipeTag.objects.bulk_create(recipe_tag)
+
+
+def set_recipe_ingredient(recipe, ingredients):
+    recipe_ingredient = [
+        RecipeIngredient(
+            recipe=recipe,
+            ingredient=Ingredient.objects.get(
+                pk=ingredient.get('ingredient'),
+            ),
+            amount=ingredient.get('amount'),
+        ) for ingredient in ingredients
+    ]
+    # Sorting by name
+    recipe_ingredient.sort(key=lambda x: x.ingredient.name)
+    RecipeIngredient.objects.bulk_create(recipe_ingredient)

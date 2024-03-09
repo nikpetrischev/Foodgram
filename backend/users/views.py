@@ -1,4 +1,3 @@
-
 # Standard Library
 from http import HTTPStatus
 
@@ -15,7 +14,11 @@ from rest_framework.viewsets import ModelViewSet
 
 # Local Imports
 from .models import CustomUser, Subscriptions
-from .serializers import ExpandedUserSerializer, UserSerializer
+from .serializers import (
+    ExpandedUserSerializer,
+    UserSerializer,
+    SubscriptionSerializer,
+)
 
 
 class UserModelViewSet(ModelViewSet):
@@ -75,7 +78,7 @@ class UserModelViewSet(ModelViewSet):
     )
     def subscriptions(self, request):
         recipes_limit = request.query_params.get('recipes_limit')
-        subscriptions = request.user.subscriptions.all()
+        subscriptions = request.user.subscriptions.order_by('username')
 
         page = self.paginate_queryset(subscriptions)
         if page is not None:
@@ -105,32 +108,26 @@ class UserModelViewSet(ModelViewSet):
         permission_classes=[permissions.IsAuthenticated],
     )
     def subscribe(self, request, id=None):
-        if request.user.id == int(id):
-            return Response(
-                data={'error':
-                      'Подписка на самого себя недопустима'},
-                status=HTTPStatus.BAD_REQUEST,
-            )
-        subs_user = get_object_or_404(CustomUser, pk=id)
-        _, created = Subscriptions.objects.get_or_create(
-            subscriber=request.user,
-            subscribe_to=subs_user,
+        serializer = SubscriptionSerializer(
+            data={
+                'subscriber': request.user.id,
+                'subscribe_to': id,
+            }
         )
-        if not created:
+        if serializer.is_valid():
+            serializer.save()
+            subs_user = CustomUser.objects.get(pk=id)
+            recipes_limit = request.query_params.get('recipes_limit')
+            context = {
+                'request': request,
+                'recipes_limit': recipes_limit,
+            }
             return Response(
-                data={'error':
-                      f'Подписка на {subs_user.username} уже оформлена'},
-                status=HTTPStatus.BAD_REQUEST,
+                data=self.get_serializer(subs_user, context=context).data,
+                status=HTTPStatus.CREATED,
             )
-        recipes_limit = request.query_params.get('recipes_limit')
-        context = {
-            'request': request,
-            'recipes_limit': recipes_limit,
-        }
-        return Response(
-            data=self.get_serializer(subs_user, context=context).data,
-            status=HTTPStatus.CREATED,
-        )
+
+        return Response(data=serializer.errors, status=HTTPStatus.BAD_REQUEST)
 
     @subscribe.mapping.delete
     def unsubscribe(self, request, id=None):

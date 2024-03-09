@@ -1,6 +1,10 @@
 # Django Library
 from django.db import models
 
+from constants import (
+    NAME_LENGTH,
+)
+
 
 class NameAndStrAbstract(models.Model):
     """
@@ -14,12 +18,11 @@ class NameAndStrAbstract(models.Model):
     that require a name field and a custom string representation.
     """
     name = models.CharField(
-        max_length=200,
+        max_length=NAME_LENGTH,
         null=False,
         blank=False,
         verbose_name='Наименование',
     )
-    objects = models.Manager()
 
     class Meta:
         abstract = True

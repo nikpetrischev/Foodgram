@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 # Django Library
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
@@ -68,7 +70,9 @@ class UserSerializer(serializers.ModelSerializer):
 
 class ExpandedUserSerializer(UserSerializer):
     recipes = serializers.SerializerMethodField(read_only=True)
-    recipes_count = serializers.SerializerMethodField(read_only=True)
+    recipes_count = serializers.ReadOnlyField(
+        source='recipes.count',
+    )
 
     class Meta:
         model = User
@@ -95,10 +99,6 @@ class ExpandedUserSerializer(UserSerializer):
         serializer = ShortenedRecipeSerializer(query, many=True)
         return serializer.data
 
-    @staticmethod
-    def get_recipes_count(obj):
-        return obj.recipes.count()
-
 
 class FavouritesOrCartSerializer(serializers.ModelSerializer):
     recipe = serializers.PrimaryKeyRelatedField(
@@ -114,9 +114,36 @@ class FavouritesOrCartSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserRecipe
-        fields = [
+        fields = (
             'recipe',
             'user',
             'is_favorited',
             'is_in_shopping_cart',
-        ]
+        )
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscriptions
+        fields = ('subscriber', 'subscribe_to')
+
+    def validate(self, attrs):
+        subscriber_id = attrs['subscriber']
+        subscribe_to_id = attrs['subscribe_to']
+
+        if subscriber_id == subscribe_to_id:
+            raise ValidationError(
+                {'errors': 'Подписка на самого себя недопустима'},
+                code=HTTPStatus.BAD_REQUEST,
+            )
+
+        if Subscriptions.objects.filter(
+            subscriber=subscriber_id,
+            subscribe_to=subscribe_to_id,
+        ):
+            raise ValidationError(
+                {'errors': 'Подписка на уже оформлена'},
+                code=HTTPStatus.BAD_REQUEST,
+            )
+
+        return attrs

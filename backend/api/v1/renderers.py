@@ -1,11 +1,8 @@
-# Standard Library
 import io
-from typing import Any
+from typing import Any, List, Tuple
 
-# DRF Library
-from rest_framework import renderers
+from rest_framework.renderers import BaseRenderer
 
-# Reportlab
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.units import cm
 from reportlab.pdfbase import pdfmetrics, ttfonts
@@ -23,7 +20,7 @@ TABLE_OFFSETS = {
 }
 
 
-class ShoppingCartRenderer(renderers.BaseRenderer):
+class ShoppingCartRenderer(BaseRenderer):
     """
     Custom renderer for generating a PDF report of a user's shopping cart.
 
@@ -68,11 +65,6 @@ class ShoppingCartRenderer(renderers.BaseRenderer):
         -------
         bytes
             The rendered PDF content as bytes.
-
-        Raises
-        ------
-        NotImplementedError
-            If the render method is not implemented in the superclass.
         """
         buffer: io.BytesIO = io.BytesIO()
 
@@ -85,8 +77,7 @@ class ShoppingCartRenderer(renderers.BaseRenderer):
         )
 
         # Generate list for visualising table to be.
-        cart_list: list[tuple[str, str, str]]\
-            = [('Продукт', 'Ед.изм.', 'Кол-во')]
+        cart_list: List[Tuple[str, str, str]] = [('Продукт', 'Ед.изм.', 'Кол-во')]
         for item in data:
             cart_list.append(
                 (

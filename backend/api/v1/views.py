@@ -1,7 +1,3 @@
-# Standard Library
-from http import HTTPStatus
-from typing import Optional
-
 # Django Library
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
@@ -23,19 +19,17 @@ from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 # Local Imports
 from .filters import NameSearchFilter, RecipeFilter
 from .mixins import PatchNotPutModelMixin
-from .permissions import RecipePermission
+from .permissions import AuthorOrReadOnly
 from .renderers import ShoppingCartRenderer
 from .serializers import (
     IngredientSerializer,
     RecipeReadSerializer,
     RecipeWriteSerializer,
-    ShortenedRecipeSerializer,
     TagSerializer,
 )
-from .utils import (
-    check_field_in_user_recipe,
-    get_recipe_or_error,
-    uncheck_field_in_user_recipe,
+from utils import (
+    check_favorite_or_cart,
+    uncheck_favorite_or_cart,
 )
 from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
 
@@ -49,7 +43,7 @@ class IngredientViewSet(ReadOnlyModelViewSet):
     This viewset provides read-only access to the Ingredient model.
     """
     serializer_class = IngredientSerializer
-    queryset = Ingredient.objects.order_by('id')
+    queryset = Ingredient.objects.order_by('name')
     filter_backends = [drf_filters.DjangoFilterBackend]
     filterset_class = NameSearchFilter
     pagination_class = None
@@ -71,9 +65,9 @@ class RecipeViewSet(
     custom actions for favoriting and adding recipes to the shopping cart.
     """
     queryset = Recipe.objects.order_by('id')
-    filter_backends = [drf_filters.DjangoFilterBackend]
+    filter_backends = (drf_filters.DjangoFilterBackend,)
     filterset_class = RecipeFilter
-    permission_classes = [RecipePermission]
+    permission_classes = (AuthorOrReadOnly,)
 
     def get_serializer_class(self):
         """
@@ -105,33 +99,7 @@ class RecipeViewSet(
             request: Request,
             pk: int = None,
     ) -> Response:
-        """
-        Adds a recipe to the user's favorites.
-
-        Args:
-            request: The request object.
-            pk: The primary key of the recipe to favorite.
-
-        Returns:
-            A response indicating success or failure.
-        """
-        recipe, error = get_recipe_or_error(pk)
-        # type: Optional[Recipe], Optional[Response]
-        if error:
-            return error
-
-        errors: Optional[Response] = check_field_in_user_recipe(
-            request.user,
-            recipe,
-            is_favorited=True,
-        )
-        if errors:
-            return errors
-
-        return Response(
-            ShortenedRecipeSerializer(recipe).data,
-            status=HTTPStatus.CREATED,
-        )
+        return check_favorite_or_cart(pk, request, is_favorited=True)
 
     @favorite.mapping.delete
     def favorite_delete(
@@ -139,30 +107,19 @@ class RecipeViewSet(
             request: Request,
             pk: int = None,
     ) -> Response:
-        """
-        Removes a recipe from the user's favorites.
+        return uncheck_favorite_or_cart(pk, request, from_favorited=True)
 
-        Args:
-            request: The request object.
-            pk: The primary key of the recipe to remove from favorites.
-
-        Returns:
-            A response indicating success or failure.
-        """
-        recipe, error = get_recipe_or_error(pk)
-        # type: Optional[Recipe], Optional[Response]
-        if error:
-            return error
-
-        errors: Optional[Response] = uncheck_field_in_user_recipe(
-            request.user,
-            recipe,
-            from_favorited=True,
-        )
-        if errors:
-            return errors
-
-        return Response(status=HTTPStatus.NO_CONTENT)
+    @action(
+        methods=['post'],
+        detail=True,
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def shopping_cart(
+            self,
+            request: Request,
+            pk: int = None,
+    ) -> Response:
+        return check_favorite_or_cart(pk, request, is_in_shopping_cart=True)
 
     @action(
         methods=['get'],
@@ -180,18 +137,14 @@ class RecipeViewSet(
         Returns:
             A response with the shopping cart PDF.
         """
-        recipes: Recipe = Recipe.objects.filter(
-            userrecipe__user=request.user,
-            userrecipe__is_in_shopping_cart=True,
-        )
-
         ingredients: RecipeIngredient = (
-            RecipeIngredient.objects.filter(recipe__in=recipes)
-            .values(
+            RecipeIngredient.objects.filter(
+                recipe__userrecipe__user=request.user,
+                recipe__userrecipe__is_in_shopping_cart=True,
+            ).values(
                 'ingredient__name',
                 'ingredient__measurement_unit',
-            )
-            .annotate(total=Sum('amount'))
+            ).annotate(total=Sum('amount'))
         )
 
         response: Response = Response(
@@ -206,74 +159,13 @@ class RecipeViewSet(
 
         return response
 
-    @action(
-        methods=['post'],
-        detail=True,
-        permission_classes=[permissions.IsAuthenticated],
-    )
-    def shopping_cart(
-            self,
-            request: Request,
-            pk: int = None,
-    ) -> Response:
-        """
-        Adds a recipe to the user's shopping cart.
-
-        Args:
-            request: The request object.
-            pk: The primary key of the recipe to add to the shopping cart.
-
-        Returns:
-            A response indicating success or failure.
-        """
-        recipe, error = get_recipe_or_error(pk)
-        # type: Optional[Recipe], Optional[Response]
-        if error:
-            return error
-
-        errors: Optional[Response] = check_field_in_user_recipe(
-            request.user,
-            recipe,
-            is_in_shopping_cart=True,
-        )
-        if errors:
-            return errors
-
-        return Response(
-            ShortenedRecipeSerializer(recipe).data,
-            status=HTTPStatus.CREATED,
-        )
-
     @shopping_cart.mapping.delete
     def shopping_cart_delete(
             self,
             request: Request,
             pk: int = None,
     ) -> Response:
-        """
-        Removes a recipe from the user's shopping cart.
-
-        Args:
-            request: The request object.
-            pk: The primary key of the recipe to remove from the shopping cart.
-
-        Returns:
-            A response indicating success or failure.
-        """
-        recipe, error = get_recipe_or_error(pk)
-        # type: Optional[Recipe], Optional[Response]
-        if error:
-            return error
-
-        errors: Optional[Response] = uncheck_field_in_user_recipe(
-            request.user,
-            recipe,
-            from_shopping_cart=True,
-        )
-        if errors:
-            return errors
-
-        return Response(status=HTTPStatus.NO_CONTENT)
+        return uncheck_favorite_or_cart(pk, request, from_shopping_cart=True)
 
 
 class TagViewSet(ReadOnlyModelViewSet):
