@@ -357,7 +357,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
         set_recipe_tag(recipe, tags)
 
-        set_recipe_ingredient(ingredients, recipe)
+        set_recipe_ingredient(recipe, ingredients)
 
         return recipe
 

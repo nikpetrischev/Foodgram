@@ -185,6 +185,7 @@ def set_recipe_tag(recipe, tags):
 
 
 def set_recipe_ingredient(recipe, ingredients):
+    breakpoint()
     recipe_ingredient = [
         RecipeIngredient(
             recipe=recipe,
