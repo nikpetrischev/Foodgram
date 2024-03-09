@@ -119,7 +119,7 @@ class ShoppingCartRenderer(BaseRenderer):
         page: canvas.Canvas = canvas.Canvas(buffer, pagesize=landscape(A4))
         page.setFont('DejaVuSerif', 24)
         page.drawString(
-            x=TITLE_OFFSETS['horizontal'] * cm,
+            x=TITLE_OFFSETS'horizontal'] * cm,
             y=TITLE_OFFSETS['vertical'] * cm,
             text='Список покупок',
         )
