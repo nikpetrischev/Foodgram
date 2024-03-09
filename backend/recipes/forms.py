@@ -1,7 +1,9 @@
+# Django Library
 from django import forms
 from django.forms.models import BaseInlineFormSet
 from django.forms.widgets import TextInput
 
+# Local Imports
 from .models import Tag
 
 

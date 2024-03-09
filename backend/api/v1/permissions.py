@@ -1,8 +1,10 @@
+# DRF Library
 from rest_framework import permissions
+from rest_framework.permissions import SAFE_METHODS
 from rest_framework.request import Request
 from rest_framework.views import View
-from rest_framework.permissions import SAFE_METHODS
 
+# Local Imports
 from recipes.models import Recipe
 
 
@@ -23,10 +25,8 @@ class AuthorOrReadOnly(permissions.BasePermission):
             bool: True if the request method is in SAFE_METHODS,
             False otherwise.
         """
-        return (
-                request.method in SAFE_METHODS
-                or request.user.is_authenticated
-        )
+        return (request.method in SAFE_METHODS
+                or request.user.is_authenticated)
 
     def has_object_permission(
             self,

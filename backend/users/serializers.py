@@ -1,3 +1,4 @@
+# Standard Library
 from http import HTTPStatus
 
 # Django Library
@@ -62,7 +63,7 @@ class UserSerializer(serializers.ModelSerializer):
     def to_representation(self, obj):
         representation = super(UserSerializer, self).to_representation(obj)
         if (request := self.context.get('request')) is not None:
-            if (request.method in ['POST']
+            if (request.method in ('POST',)
                     and 'subscr' not in request.path):
                 representation.pop('is_subscribed')
         return representation
@@ -123,6 +124,7 @@ class FavouritesOrCartSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Subscriptions
         fields = ('subscriber', 'subscribe_to')
@@ -142,7 +144,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             subscribe_to=subscribe_to_id,
         ):
             raise ValidationError(
-                {'errors': 'Подписка на уже оформлена'},
+                {'errors': 'Подписка уже была оформлена'},
                 code=HTTPStatus.BAD_REQUEST,
             )
 

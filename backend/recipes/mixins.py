@@ -1,9 +1,7 @@
 # Django Library
 from django.db import models
 
-from constants import (
-    NAME_LENGTH,
-)
+from constants import NAME_LENGTH
 
 
 class NameAndStrAbstract(models.Model):

@@ -6,17 +6,18 @@ from django.core.validators import (
 )
 from django.db import models
 
+from constants import (
+    COLOR_LENGTH,
+    MAX_AMOUNT,
+    MAX_COOKING_TIME,
+    MEASUREMENT_UNIT_LENGTH,
+    MIN_AMOUNT,
+    MIN_COOKING_TIME,
+)
+
 # Local Imports
 from .mixins import NameAndStrAbstract
 from users.models import CustomUser
-from constants import (
-    MEASUREMENT_UNIT_LENGTH,
-    COLOR_LENGTH,
-    MIN_COOKING_TIME,
-    MAX_COOKING_TIME,
-    MIN_AMOUNT,
-    MAX_AMOUNT,
-)
 
 
 class Ingredient(NameAndStrAbstract):

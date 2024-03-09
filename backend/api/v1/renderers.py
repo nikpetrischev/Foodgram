@@ -1,8 +1,11 @@
+# Standard Library
 import io
-from typing import Any, List, Tuple
+from typing import Any
 
+# DRF Library
 from rest_framework.renderers import BaseRenderer
 
+# Reportlab
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.units import cm
 from reportlab.pdfbase import pdfmetrics, ttfonts
@@ -77,7 +80,7 @@ class ShoppingCartRenderer(BaseRenderer):
         )
 
         # Generate list for visualising table to be.
-        cart_list: List[Tuple[str, str, str]] = [('Продукт', 'Ед.изм.', 'Кол-во')]
+        cart_list: list[tuple] = [('Продукт', 'Ед.изм.', 'Кол-во')]
         for item in data:
             cart_list.append(
                 (
@@ -93,7 +96,7 @@ class ShoppingCartRenderer(BaseRenderer):
         table: Table = Table(cart_list, colWidths=(15 * cm, 3 * cm, 5 * cm))
         table.setStyle(
             TableStyle(
-                [
+                (
                     ('GRID', (0, 0), (-1, -1), 1, (0, 0, 0)),
                     ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
                     ('FONTNAME', (0, 0), (-1, 0), 'DejaVuSerif', 18),
@@ -106,9 +109,9 @@ class ShoppingCartRenderer(BaseRenderer):
                         'ROWBACKGROUNDS',
                         (0, 1),
                         (-1, -1),
-                        [(1, 1, 1), (210 / 255, 210 / 255, 210 / 255)],
+                        ((1, 1, 1), (210 / 255, 210 / 255, 210 / 255)),
                     ),
-                ],
+                ),
             ),
         )
 

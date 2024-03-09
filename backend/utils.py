@@ -6,8 +6,7 @@ from typing import Optional, Union
 from rest_framework.response import Response
 
 # Local Imports
-
-from recipes.models import Recipe, UserRecipe, RecipeTag, RecipeIngredient, Ingredient
+from recipes.models import Recipe, RecipeIngredient, RecipeTag, UserRecipe
 from users.models import CustomUser
 from users.serializers import FavouritesOrCartSerializer
 
@@ -34,6 +33,7 @@ def error_response(
 
 def get_recipe_or_error(
         pk: int,
+        suggested_error_code: HTTPStatus = HTTPStatus.NOT_FOUND,
 ) -> tuple[Optional[Recipe], Optional[Response]]:
     """
     Fetch a recipe by its primary key
@@ -41,7 +41,10 @@ def get_recipe_or_error(
     """
     recipe: Recipe = Recipe.objects.filter(pk=pk).first()
     if not recipe:
-        return None, error_response('Рецепт не найден')
+        return None, error_response(
+            error_message='Рецепт не найден',
+            status_code=suggested_error_code,
+        )
     return recipe, None
 
 
@@ -136,9 +139,10 @@ def check_favorite_or_cart(
         is_in_shopping_cart=None,
 ):
     # Evading circular importing
+    # Local Imports
     from api.v1.serializers import ShortenedRecipeSerializer
 
-    recipe, error = get_recipe_or_error(pk)
+    recipe, error = get_recipe_or_error(pk, HTTPStatus.BAD_REQUEST)
     # type: Optional[Recipe], Optional[Response]
     if error:
         return error
@@ -185,13 +189,10 @@ def set_recipe_tag(recipe, tags):
 
 
 def set_recipe_ingredient(recipe, ingredients):
-    breakpoint()
     recipe_ingredient = [
         RecipeIngredient(
             recipe=recipe,
-            ingredient=Ingredient.objects.get(
-                pk=ingredient.get('ingredient'),
-            ),
+            ingredient=ingredient.get('id'),
             amount=ingredient.get('amount'),
         ) for ingredient in ingredients
     ]

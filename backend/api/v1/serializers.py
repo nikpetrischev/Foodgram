@@ -5,27 +5,18 @@ from typing import Any, Union
 
 # Django Library
 from django.contrib.auth import get_user_model
-from django.core import exceptions
 from django.core.files.base import ContentFile
-from django.shortcuts import get_object_or_404
 
 # DRF Library
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
+
+from constants import MAX_AMOUNT, MIN_AMOUNT
+from utils import set_recipe_ingredient, set_recipe_tag
 
 # Local Imports
 from .fields import Hex2NameColorField
-from constants import (
-    MIN_AMOUNT,
-    MAX_AMOUNT,
-)
-from recipes.models import (
-    Ingredient,
-    Recipe,
-    RecipeIngredient,
-    RecipeTag,
-    Tag,
-)
-from utils import set_recipe_tag, set_recipe_ingredient
+from recipes.models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
 from users.serializers import UserSerializer
 
 User = get_user_model()
@@ -125,10 +116,20 @@ class IngredientsWriteSerializer(serializers.ModelSerializer):
     It is used for write operations to create or update ingredients associated
     with a recipe.
     """
-    id = serializers.IntegerField(source='ingredient')
+    # id = serializers.IntegerField(source='ingredient')
+    id = serializers.PrimaryKeyRelatedField(
+        queryset=Ingredient.objects.all(),
+        error_messages={
+            'does_not_exist': 'Ингредиента в базе не найдено',
+        },
+    )
     amount = serializers.IntegerField(
         min_value=MIN_AMOUNT,
         max_value=MAX_AMOUNT,
+        error_messages={
+            'max_value': 'Кол-во ингредиента выше максимума',
+            'min_value': 'Кол-во ингредиента ниже минимума',
+        },
     )
 
     class Meta:
@@ -186,7 +187,7 @@ class ShortenedRecipeSerializer(AbstractRecipeSerializer):
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
         read_only_fields = ('id', 'name', 'image', 'cooking_time')
-        ordering = ['id']
+        ordering = ('id',)
 
 
 class RecipeReadSerializer(AbstractRecipeSerializer):
@@ -311,6 +312,16 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             'ingredients',
             'cooking_time',
         )
+        extra_kwargs = {
+            'name': {
+                'validators': (
+                    UniqueValidator(
+                        queryset=Recipe.objects.all(),
+                        message='Рецепт с таким именем уже существует',
+                    ),
+                ),
+            },
+        }
 
     def save(self, **kwargs: Any) -> Recipe:
         """
@@ -447,35 +458,12 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
                 code=HTTPStatus.BAD_REQUEST,
             )
 
-        for ingredient in value:
-            try:
-                Ingredient.objects.get(
-                    pk=ingredient['ingredient'],
-                )
-            except exceptions.ObjectDoesNotExist:
-                raise serializers.ValidationError(
-                    'Ингредиент не найден в базе',
-                    code=HTTPStatus.BAD_REQUEST,
-                )
-
-            if ingredient['amount'] < MIN_AMOUNT:
-                raise serializers.ValidationError(
-                    f'Минимальное кол-во ингредиента - {MIN_AMOUNT}',
-                    code=HTTPStatus.BAD_REQUEST,
-                )
-
-            if ingredient['amount'] > MAX_AMOUNT:
-                raise serializers.ValidationError(
-                    f'Максимальное кол-во ингредиента - {MAX_AMOUNT}',
-                    code=HTTPStatus.BAD_REQUEST,
-                )
-
-            ingredient_ids = {v['ingredient'] for v in value}
-            if len(ingredient_ids) != len(value):
-                raise serializers.ValidationError(
-                    'Повтор ингредиента',
-                    code=HTTPStatus.BAD_REQUEST,
-                )
+        ingredients = {v['id'] for v in value}
+        if len(ingredients) != len(value):
+            raise serializers.ValidationError(
+                'Повтор ингредиента',
+                code=HTTPStatus.BAD_REQUEST,
+            )
 
         return value
 

@@ -5,11 +5,11 @@ from django.db import models
 from django.db.models import F, Q
 
 from constants import (
-    USERNAME_LENGTH,
-    PASSWORD_LENGTH,
     EMAIL_LENGTH,
     FIRSTNAME_LENGTH,
     LASTNAME_LENGTH,
+    PASSWORD_LENGTH,
+    USERNAME_LENGTH,
 )
 
 
@@ -89,16 +89,16 @@ class Subscriptions(models.Model):
     objects = models.Manager()
 
     class Meta:
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
-                fields=['subscriber', 'subscribe_to'],
+                fields=('subscriber', 'subscribe_to'),
                 name='unique_subscription',
             ),
             models.CheckConstraint(
                 check=~Q(subscriber=F('subscribe_to')),
                 name='self_subscription',
             ),
-        ]
+        )
         verbose_name = 'Подписка'
         verbose_name_plural = 'подписки'
 

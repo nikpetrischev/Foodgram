@@ -3,13 +3,12 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Group
 
+# DRF Library
 from rest_framework.authtoken.models import TokenProxy
 
 # Local Imports
 from .models import CustomUser, Subscriptions
-
 from recipes.models import Recipe, UserRecipe
-
 
 admin.site.unregister(Group)
 admin.site.unregister(TokenProxy)

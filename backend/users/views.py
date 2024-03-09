@@ -16,8 +16,8 @@ from rest_framework.viewsets import ModelViewSet
 from .models import CustomUser, Subscriptions
 from .serializers import (
     ExpandedUserSerializer,
-    UserSerializer,
     SubscriptionSerializer,
+    UserSerializer,
 )
 
 
@@ -25,8 +25,8 @@ class UserModelViewSet(ModelViewSet):
     model = CustomUser
     queryset = CustomUser.objects.order_by('id')
     lookup_field = 'id'
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['=username']
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('=username',)
 
     def get_serializer_class(self):
         if ('/subscriptions/' in self.request.path
@@ -42,18 +42,18 @@ class UserModelViewSet(ModelViewSet):
         return serializer_class(*args, **kwargs)
 
     @action(
-        methods=['get'],
+        methods=('get',),
         detail=False,
-        permission_classes=[permissions.IsAuthenticated],
+        permission_classes=(permissions.IsAuthenticated,),
     )
     def me(self, request):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
     @action(
-        methods=['post'],
+        methods=('post',),
         detail=False,
-        permission_classes=[permissions.IsAuthenticated],
+        permission_classes=(permissions.IsAuthenticated,),
     )
     def set_password(self, request):
         current_password = request.data.get('current_password')
@@ -72,9 +72,9 @@ class UserModelViewSet(ModelViewSet):
         )
 
     @action(
-        methods=['get'],
+        methods=('get',),
         detail=False,
-        permission_classes=[permissions.IsAuthenticated],
+        permission_classes=(permissions.IsAuthenticated,),
     )
     def subscriptions(self, request):
         recipes_limit = request.query_params.get('recipes_limit')
@@ -103,9 +103,9 @@ class UserModelViewSet(ModelViewSet):
         return Response(data=serializer.data, status=HTTPStatus.OK)
 
     @action(
-        methods=['post'],
+        methods=('post',),
         detail=True,
-        permission_classes=[permissions.IsAuthenticated],
+        permission_classes=(permissions.IsAuthenticated,),
     )
     def subscribe(self, request, id=None):
         serializer = SubscriptionSerializer(
@@ -114,6 +114,13 @@ class UserModelViewSet(ModelViewSet):
                 'subscribe_to': id,
             }
         )
+
+        if not CustomUser.objects.filter(pk=id):
+            return Response(
+                {'subscribe_to': f'Пользователя {id} не существует'},
+                status=HTTPStatus.NOT_FOUND,
+            )
+
         if serializer.is_valid():
             serializer.save()
             subs_user = CustomUser.objects.get(pk=id)

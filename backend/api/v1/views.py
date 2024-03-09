@@ -16,6 +16,8 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 
+from utils import check_favorite_or_cart, uncheck_favorite_or_cart
+
 # Local Imports
 from .filters import NameSearchFilter, RecipeFilter
 from .mixins import PatchNotPutModelMixin
@@ -26,10 +28,6 @@ from .serializers import (
     RecipeReadSerializer,
     RecipeWriteSerializer,
     TagSerializer,
-)
-from utils import (
-    check_favorite_or_cart,
-    uncheck_favorite_or_cart,
 )
 from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
 
@@ -44,10 +42,10 @@ class IngredientViewSet(ReadOnlyModelViewSet):
     """
     serializer_class = IngredientSerializer
     queryset = Ingredient.objects.order_by('name')
-    filter_backends = [drf_filters.DjangoFilterBackend]
+    filter_backends = (drf_filters.DjangoFilterBackend,)
     filterset_class = NameSearchFilter
     pagination_class = None
-    permission_classes = [permissions.AllowAny]
+    permission_classes = (permissions.AllowAny,)
 
 
 class RecipeViewSet(
@@ -76,7 +74,7 @@ class RecipeViewSet(
         Returns:
             The serializer class to use for the request.
         """
-        if self.request.method in ['GET']:
+        if self.request.method in ('GET',):
             return RecipeReadSerializer
         return RecipeWriteSerializer
 
@@ -90,9 +88,9 @@ class RecipeViewSet(
         serializer.save(author=self.request.user)
 
     @action(
-        methods=['post'],
+        methods=('post',),
         detail=True,
-        permission_classes=[permissions.IsAuthenticated],
+        permission_classes=(permissions.IsAuthenticated,),
     )
     def favorite(
             self,
@@ -110,9 +108,9 @@ class RecipeViewSet(
         return uncheck_favorite_or_cart(pk, request, from_favorited=True)
 
     @action(
-        methods=['post'],
+        methods=('post',),
         detail=True,
-        permission_classes=[permissions.IsAuthenticated],
+        permission_classes=(permissions.IsAuthenticated,),
     )
     def shopping_cart(
             self,
@@ -122,10 +120,10 @@ class RecipeViewSet(
         return check_favorite_or_cart(pk, request, is_in_shopping_cart=True)
 
     @action(
-        methods=['get'],
+        methods=('get',),
         detail=False,
-        permission_classes=[permissions.IsAuthenticated],
-        renderer_classes=[ShoppingCartRenderer],
+        permission_classes=(permissions.IsAuthenticated,),
+        renderer_classes=(ShoppingCartRenderer,),
     )
     def download_shopping_cart(self, request: Request) -> Response:
         """
@@ -176,5 +174,5 @@ class TagViewSet(ReadOnlyModelViewSet):
     """
     queryset = Tag.objects.order_by('id')
     serializer_class = TagSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = (permissions.AllowAny,)
     pagination_class = None

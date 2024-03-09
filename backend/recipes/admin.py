@@ -3,8 +3,8 @@ from django.contrib import admin
 from django.utils.html import format_html
 
 # Local Imports
-from .models import Ingredient, Recipe, Tag, UserRecipe
 from .forms import AtLeastOneRequiredInlineFormSet, TagAdminForm
+from .models import Ingredient, Recipe, Tag, UserRecipe
 
 
 class TagInline(admin.StackedInline):
@@ -65,13 +65,13 @@ class IngredientAdmin(admin.ModelAdmin):
 
 @admin.register(UserRecipe)
 class CartsAndFavoritesAdmin(admin.ModelAdmin):
-    list_display = [
+    list_display = (
         'user',
         'recipe',
         'favourited',
         'in_shopping_cart',
-    ]
-    list_filter = ['user']
+    )
+    list_filter = ('user',)
 
     @admin.display(
         boolean=True,
@@ -91,4 +91,4 @@ class CartsAndFavoritesAdmin(admin.ModelAdmin):
         return False
 
     def has_delete_permission(self, request, obj=None):
-        return False
+        return request.user.is_staff
