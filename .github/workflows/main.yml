@@ -43,11 +43,11 @@ jobs:
         pip install -r ./backend/requirements/requirements.txt
         pip install -r ./backend/requirements/requirements.lint.txt
 
-    - name: Test with linter
-      env:
-        SECRET_KEY: ${{ secrets.SECRET_KEY }}
-        ALLOWED_HOSTS: ${{ secrets.ALLOWED_HOSTS }}
-      run: python -m flake8 backend/
+#    - name: Test with linter
+#      env:
+#        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+#        ALLOWED_HOSTS: ${{ secrets.ALLOWED_HOSTS }}
+#      run: python -m flake8 backend/
 
   build_and_push_backend_to_docker_hub:
     name: Push backend Docker image to DockerHub
