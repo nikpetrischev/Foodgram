@@ -14,6 +14,13 @@ from constants import (
 
 
 class CustomUser(AbstractUser):
+    """
+    Custom user model that extends Django's AbstractUser.
+
+    This model adds additional fields and methods to the default user model.
+    It includes fields for username, password, first name, last name,
+    and email, as well as relationships for favorites and subscriptions.
+    """
     username = models.CharField(
         max_length=USERNAME_LENGTH,
         unique=True,
@@ -65,11 +72,24 @@ class CustomUser(AbstractUser):
         verbose_name = 'Пользователь'
         verbose_name_plural = 'пользователи'
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """
+        Return the username of the user.
+
+        Returns:
+            str: The username of the user.
+        """
         return f'{self.username}'
 
 
 class Subscriptions(models.Model):
+    """
+    Model representing a subscription between users.
+
+    This model defines a many-to-many relationship between users,
+    allowing one user to subscribe to another. It includes fields for
+    the subscriber and the user they are subscribing to.
+    """
     subscriber = models.ForeignKey(
         CustomUser,
         blank=False,
@@ -102,5 +122,11 @@ class Subscriptions(models.Model):
         verbose_name = 'Подписка'
         verbose_name_plural = 'подписки'
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """
+        Return the username of the user being subscribed to.
+
+        Returns:
+            str: The username of the user being subscribed to.
+        """
         return f'{self.subscribe_to}'

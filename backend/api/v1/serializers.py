@@ -116,7 +116,6 @@ class IngredientsWriteSerializer(serializers.ModelSerializer):
     It is used for write operations to create or update ingredients associated
     with a recipe.
     """
-    # id = serializers.IntegerField(source='ingredient')
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
         error_messages={
@@ -248,8 +247,6 @@ class RecipeReadSerializer(AbstractRecipeSerializer):
         try:
             user_recipe = (obj.userrecipe_set
                            .get(user=self.context.get('request').user.id))
-        # Using wide Exception because it doesn't matter which one we get.
-        # Any Exception will mean that recipe is not favorited at the least.
         except Exception:
             return False
         else:
@@ -273,8 +270,6 @@ class RecipeReadSerializer(AbstractRecipeSerializer):
         try:
             user_recipe = (obj.userrecipe_set
                            .get(user=self.context.get('request').user.id))
-        # Using wide Exception because it doesn't matter which one we get.
-        # Any Exception will mean that recipe is not in cart at the least.
         except Exception:
             return False
         else:
@@ -325,22 +320,19 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
     def save(self, **kwargs: Any) -> Recipe:
         """
-                Save the Recipe instance.
-
-                This method sets the author of the Recipe instance
-                to the current user if it's not already set
-                and then calls the superclass's save method.
-
-                Parameters
-                ----------
-                **kwargs : Any
-                    Additional keyword arguments.
-
-                Returns
-                -------
-                Recipe
-                    The saved Recipe instance.
-                """
+           Save the Recipe instance.
+       This method sets the author of the Recipe instance
+       to the current user if it's not already set
+       and then calls the superclass's save method.
+       Parameters
+       ----------
+       **kwargs : Any
+           Additional keyword arguments.
+       Returns
+       -------
+       Recipe
+           The saved Recipe instance.
+       """
         if self.fields['author'] is None:
             kwargs['author'] = self.fields['author'].get_default()
         return super().save(**kwargs)
@@ -348,15 +340,12 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     def create(self, validated_data: dict) -> Recipe:
         """
         Create a new Recipe instance.
-
         This method creates a new Recipe instance and associates it with the
         provided tags and ingredients.
-
         Parameters
         ----------
         validated_data : dict
             The validated data for the new Recipe instance.
-
         Returns
         -------
         Recipe
@@ -375,17 +364,14 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     def update(self, instance: Recipe, validated_data: dict) -> Recipe:
         """
         Update an existing Recipe instance.
-
         This method updates the fields of an existing Recipe instance and
         re-associates it with the provided tags and ingredients.
-
         Parameters
         ----------
         instance : Recipe
             The Recipe instance to update.
         validated_data : dict
             The validated data for the update.
-
         Returns
         -------
         Recipe
@@ -399,12 +385,12 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         instance.text = validated_data.get('text', instance.text)
         instance.image = validated_data.get('image', instance.image)
 
-        RecipeIngredient.objects.filter(recipe=instance).delete()
         ingredients: dict = validated_data.pop('ingredients')
+        RecipeIngredient.objects.filter(recipe=instance).delete()
         set_recipe_ingredient(instance, ingredients)
 
-        RecipeTag.objects.filter(recipe=instance).delete()
         tags: list = validated_data.pop('tags')
+        RecipeTag.objects.filter(recipe=instance).delete()
         set_recipe_tag(instance, tags)
 
         instance.save()
@@ -430,21 +416,17 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     def validate_ingredients(value: list) -> list:
         """
         Validate the ingredients field.
-
         This method checks that the ingredients field is not empty and that
         each ingredient exists in the database. It also ensures that each
         ingredient is unique and that the amount is at least 1.
-
         Parameters
         ----------
         value : list
             The list of ingredients to validate.
-
         Returns
         -------
         list
             The validated list of ingredients.
-
         Raises
         ------
         serializers.ValidationError
@@ -471,20 +453,16 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     def validate_tags(value: list) -> list:
         """
         Validate the tags field.
-
         This method checks that the tags field is not empty and that each tag
         exists in the database. It also ensures that each tag is unique.
-
         Parameters
         ----------
         value : list
             The list of tags to validate.
-
         Returns
         -------
         list
             The validated list of tags.
-
         Raises
         ------
         serializers.ValidationError

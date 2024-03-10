@@ -23,7 +23,7 @@ class PatchNotPutModelMixin(UpdateModelMixin):
         """
         Handles partial updates of a model instance.
 
-        This method is overridden to use the update method
+        This method is overridden to use the partial_update method
         from the UpdateModelMixin,
         effectively treating PATCH requests as if they were PUT requests.
 
@@ -44,6 +44,6 @@ class PatchNotPutModelMixin(UpdateModelMixin):
         Raises
         ------
         NotImplementedError
-            If the update method is not implemented in the superclass.
+            If the partial_update method is not implemented in the superclass.
         """
         return super().update(request, *args, **kwargs)

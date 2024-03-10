@@ -40,7 +40,7 @@ class Ingredient(NameAndStrAbstract):
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'ингредиенты'
 
-    def __str__(self):
+    def __str__(self) -> str:
         """
         Return a string representation of the ingredient.
 
@@ -116,6 +116,7 @@ class Recipe(NameAndStrAbstract):
     )
     tags = models.ManyToManyField(
         to=Tag,
+        blank=False,
         through='RecipeTag',
         verbose_name='Список тегов',
     )
@@ -172,7 +173,7 @@ class RecipeIngredient(models.Model):
         verbose_name = 'Состав'
         verbose_name_plural = 'состав'
 
-    def __str__(self):
+    def __str__(self) -> str:
         """
         Return a string representation of the recipe-ingredient relationship.
 
@@ -195,10 +196,12 @@ class RecipeTag(models.Model):
     recipe = models.ForeignKey(
         to=Recipe,
         on_delete=models.CASCADE,
+        verbose_name='Рецепт',
     )
     tag = models.ForeignKey(
         to=Tag,
         on_delete=models.CASCADE,
+        verbose_name='Тег',
     )
 
     class Meta:
@@ -208,10 +211,10 @@ class RecipeTag(models.Model):
                 name='no_same_tags',
             ),
         )
-        verbose_name = 'Теги'
-        verbose_name_plural = 'теги'
+        verbose_name = 'Теги у рецепта'
+        verbose_name_plural = 'теги у рецепта'
 
-    def __str__(self):
+    def __str__(self) -> str:
         """
         Return a string representation of the recipe-tag relationship.
 
@@ -264,7 +267,7 @@ class UserRecipe(models.Model):
         verbose_name = 'Рецепт'
         verbose_name_plural = 'избранное'
 
-    def __str__(self):
+    def __str__(self) -> str:
         """
         Return a string representation of the user-recipe relationship.
 

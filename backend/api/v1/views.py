@@ -21,7 +21,7 @@ from utils import check_favorite_or_cart, uncheck_favorite_or_cart
 # Local Imports
 from .filters import NameSearchFilter, RecipeFilter
 from .mixins import PatchNotPutModelMixin
-from .permissions import AuthorOrReadOnly
+from .permissions import AuthorOrAuthenticatedOrReadOnly
 from .renderers import ShoppingCartRenderer
 from .serializers import (
     IngredientSerializer,
@@ -65,7 +65,7 @@ class RecipeViewSet(
     queryset = Recipe.objects.order_by('id')
     filter_backends = (drf_filters.DjangoFilterBackend,)
     filterset_class = RecipeFilter
-    permission_classes = (AuthorOrReadOnly,)
+    permission_classes = (AuthorOrAuthenticatedOrReadOnly,)
 
     def get_serializer_class(self):
         """

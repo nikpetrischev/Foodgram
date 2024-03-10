@@ -8,22 +8,27 @@ from rest_framework.views import View
 from recipes.models import Recipe
 
 
-class AuthorOrReadOnly(permissions.BasePermission):
+class AuthorOrAuthenticatedOrReadOnly(permissions.BasePermission):
     """
-    Custom permission class for Recipe model.
+    Custom permission class for the Recipe model.
+
+    This permission class allows any authenticated user to perform
+    read-only actions (GET, HEAD, OPTIONS) on any recipe.
+    It also allows a user to modify a recipe
+    if they are the author of that recipe.
     """
 
     def has_permission(self, request: Request, view: View) -> bool:
         """
-        Check if the request has permission to perform the action.
+        Determine if the request has permission to perform the action.
 
         Args:
             request (Request): The request instance.
             view (View): The view instance.
 
         Returns:
-            bool: True if the request method is in SAFE_METHODS,
-            False otherwise.
+            bool: True if the request method is in SAFE_METHODS
+            or the user is authenticated, False otherwise.
         """
         return (request.method in SAFE_METHODS
                 or request.user.is_authenticated)
@@ -35,7 +40,7 @@ class AuthorOrReadOnly(permissions.BasePermission):
             obj: Recipe,
     ) -> bool:
         """
-        Check if the request has permission to perform the action
+        Determine if the request has permission to perform the action
         on the given object.
 
         Args:

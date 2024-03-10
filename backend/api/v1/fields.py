@@ -14,41 +14,49 @@ class Hex2NameColorField(serializers.Field):
 
     def to_representation(self, value: str) -> str:
         """
-        Display color's hex value.
+        Convert the internal hex color code to its corresponding color name.
 
         Parameters
         ----------
         value : str
-            The internal color's value.
+            The internal hex color code.
 
         Returns
         -------
         str
-            The represented value.
-        """
-        return value
-
-    def to_internal_value(self, data: str) -> str:
-        """
-        Convert the input data to the internal value.
-
-        Parameters
-        ----------
-        data : str
-            The input data to convert.
-
-        Returns
-        -------
-        str
-            The converted internal value.
+            The color name corresponding to the hex color code.
 
         Raises
         ------
         serializers.ValidationError
-            If the input data cannot be converted to a color name.
+            If the hex color code cannot be converted to a color name.
         """
         try:
-            data: str = webcolors.hex_to_name(data)
+            return webcolors.hex_to_name(value) + f' ({value})'
         except ValueError:
-            raise serializers.ValidationError('Не найдено имя для цвета')
+            return value
+
+    def to_internal_value(self, data: str) -> str:
+        """
+        Validate the input data as a hex color code.
+
+        Parameters
+        ----------
+        data : str
+            The input data to validate.
+
+        Returns
+        -------
+        str
+            The validated hex color code.
+
+        Raises
+        ------
+        serializers.ValidationError
+            If the input data is not a valid hex color code.
+        """
+        try:
+            webcolors.name_to_hex(data)
+        except ValueError:
+            raise serializers.ValidationError('Неверный формат цвета')
         return data
