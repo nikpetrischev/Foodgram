@@ -4,7 +4,14 @@ from django.utils.html import format_html
 
 # Local Imports
 from .forms import AtLeastOneRequiredInlineFormSet, TagAdminForm
-from .models import Ingredient, Recipe, Tag, UserRecipe
+from .models import (
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    RecipeTag,
+    Tag,
+    UserRecipe,
+)
 
 
 class TagInline(admin.StackedInline):
@@ -19,17 +26,21 @@ class IngredientsInline(admin.StackedInline):
     extra = 0
 
 
+def colored_tag_name(obj: Tag):
+    return format_html(
+        f'<span style="color: {obj.color};">{obj.name}</span>',
+    )
+
+
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     list_display = ('colored_name',)
     fields = ('name', 'slug', 'color')
     form = TagAdminForm
 
-    @admin.display(description='Тег')
+    @admin.display(description='Имя тега')
     def colored_name(self, obj):
-        return format_html(
-            f'<span style="color: {obj.color};">{obj.name}</span>',
-        )
+        return colored_tag_name(obj)
 
 
 @admin.register(Recipe)
@@ -44,8 +55,7 @@ class RecipeAdmin(admin.ModelAdmin):
     inlines = (TagInline, IngredientsInline)
     list_display = ('name', 'author')
     list_filter = (
-        ('author', admin.RelatedOnlyFieldListFilter),
-        'name',
+        'author',
         ('tags', admin.RelatedOnlyFieldListFilter),
     )
     list_select_related = ('author',)
@@ -89,6 +99,32 @@ class CartsAndFavoritesAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_staff
+
+
+@admin.register(RecipeTag)
+class RecipeTagAdmin(admin.ModelAdmin):
+    fields = ('recipe', 'tag')
+    list_display = ('recipe', 'colored_tag')
+    list_filter = ('tag',)
+    search_fields = ('^recipe__name',)
+
+    @admin.display(description='Тег')
+    def colored_tag(self, obj):
+        return colored_tag_name(obj.tag)
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_staff
+
+
+@admin.register(RecipeIngredient)
+class RecipeIngredientAdmin(admin.ModelAdmin):
+    fields = ('recipe', 'ingredient', 'amount')
+    list_display = ('recipe', 'ingredient')
+    search_fields = ('^recipe__name',)
+    list_filter = (('recipe__ingredients', admin.RelatedOnlyFieldListFilter),)
 
     def has_delete_permission(self, request, obj=None):
         return request.user.is_staff

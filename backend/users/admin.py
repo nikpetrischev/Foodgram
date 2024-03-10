@@ -29,19 +29,25 @@ class SubscriptionInline(admin.TabularInline):
 class UserAdmin(UserAdmin):
     list_display = ('username', 'email')
     fieldsets = (
-        ('Credentials', {
-            'fields': ('username', 'email', 'password'),
-        }),
-        ('Name', {
-            'fields': ('first_name', 'last_name'),
-        }),
-        ('Other data', {
-            'fields': (
-                'count_recipes',
-                'count_subscriptions',
-                'count_favorites',
-            ),
-        }),
+        (
+            'Данные пользователя', {
+                'fields': ('username', 'email', 'password'),
+            },
+        ),
+        (
+            'Личные данные', {
+                'fields': ('first_name', 'last_name'),
+            },
+        ),
+        (
+            'Прочее', {
+                'fields': (
+                    'count_recipes',
+                    'count_subscriptions',
+                    'count_favorites',
+                ),
+            },
+        ),
     )
     readonly_fields = (
         'count_recipes',
@@ -69,3 +75,21 @@ class UserAdmin(UserAdmin):
     @admin.display(description='Своих рецептов в базе')
     def count_recipes(self, obj):
         return Recipe.objects.filter(author=obj.id).count()
+
+
+@admin.register(Subscriptions)
+class SubscriptionsAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'subscriber', 'subscribe_to')
+    ordering = ('pk',)
+    fields = (('subscriber',), ('subscribe_to', 'get_subs_recipes'))
+    search_fields = ('^subscriber__username', '^subscribe_to__username')
+
+    @admin.display(description='Кол-во рецептов')
+    def get_subs_recipes(self, obj):
+        return obj.subscribe_to.recipes.count()
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_staff
+
+    def has_change_permission(self, request, obj=None):
+        return False

@@ -52,7 +52,6 @@ class RecipeFilter(drf_filters.FilterSet):
     is_favorited, and is_in_shopping_cart.
     Supports multiple tag choices.
     """
-    author = drf_filters.NumberFilter(field_name='author__id')
     tags = drf_filters.AllValuesMultipleFilter(field_name='tags__slug')
     is_favorited = drf_filters.ChoiceFilter(
         field_name='userrecipe__is_favorited',
@@ -64,7 +63,7 @@ class RecipeFilter(drf_filters.FilterSet):
     )
 
     class Meta:
-        models = Recipe
+        model = Recipe
         fields = (
             'author',
             'tags',
