@@ -7,7 +7,6 @@ on:
       - main
       - master
       - 'develop/**'
-      - 'fix/**'
     paths-ignore:
       - './README.md'
 
