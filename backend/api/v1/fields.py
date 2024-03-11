@@ -1,4 +1,7 @@
 # DRF Library
+import base64
+
+from django.core.files.base import ContentFile
 from rest_framework import serializers
 
 import webcolors
@@ -32,7 +35,7 @@ class Hex2NameColorField(serializers.Field):
             If the hex color code cannot be converted to a color name.
         """
         try:
-            return webcolors.hex_to_name(value) + f' ({value})'
+            return webcolors.hex_to_name(value)
         except ValueError:
             return value
 
@@ -60,3 +63,38 @@ class Hex2NameColorField(serializers.Field):
         except ValueError:
             raise serializers.ValidationError('Неверный формат цвета')
         return data
+
+
+class Base64ImageField(serializers.ImageField):
+    """
+    A custom serializer field for handling base64 encoded images.
+
+    This field is used to validate and convert base64 encoded image strings to
+    Django ContentFile objects.
+    """
+
+    def to_internal_value(self, data: str) -> ContentFile:
+        """
+        Validate and convert the input data to the internal value.
+
+        Parameters
+        ----------
+        data : str
+            The input data to validate and convert.
+
+        Returns
+        -------
+        ContentFile
+            The converted internal value.
+
+        Raises
+        ------
+        serializers.ValidationError
+            If the input data is not a valid base64 encoded image.
+        """
+        if isinstance(data, str) and data.startswith('data:image'):
+            format, imgstr = data.split(';base64,')
+            ext = format.split('/')[-1]
+            data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
+
+        return super().to_internal_value(data)

@@ -66,8 +66,7 @@ class UserSerializer(serializers.ModelSerializer):
             subscribe_to=obj.id,
         ).exists()
 
-    @staticmethod
-    def validate_username(value: str) -> str:
+    def validate_username(self, value: str) -> str:
         """
         Validate the username field.
 

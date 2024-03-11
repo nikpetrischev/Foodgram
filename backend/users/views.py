@@ -163,26 +163,25 @@ class UserModelViewSet(ModelViewSet):
             }
         )
 
-        if not CustomUser.objects.filter(pk=id).exists():
+        try:
+            subs_user = CustomUser.objects.get(pk=id)
+        except ObjectDoesNotExist as err:
             return Response(
-                {'subscribe_to': f'Пользователя {id} не существует'},
+                {'error': str(err)},
                 status=HTTPStatus.NOT_FOUND,
             )
 
-        if serializer.is_valid():
-            serializer.save()
-            subs_user = CustomUser.objects.get(pk=id)
-            recipes_limit = request.query_params.get('recipes_limit')
-            context = {
-                'request': request,
-                'recipes_limit': recipes_limit,
-            }
-            return Response(
-                data=self.get_serializer(subs_user, context=context).data,
-                status=HTTPStatus.CREATED,
-            )
-
-        return Response(data=serializer.errors, status=HTTPStatus.BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        recipes_limit = request.query_params.get('recipes_limit')
+        context = {
+            'request': request,
+            'recipes_limit': recipes_limit,
+        }
+        return Response(
+            data=self.get_serializer(subs_user, context=context).data,
+            status=HTTPStatus.CREATED,
+        )
 
     @subscribe.mapping.delete
     def unsubscribe(self, request, id=None) -> Response:

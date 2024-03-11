@@ -1,60 +1,22 @@
 # Standard Library
-import base64
 from http import HTTPStatus
 from typing import Any, Union
 
 # Django Library
 from django.contrib.auth import get_user_model
-from django.core.files.base import ContentFile
 
 # DRF Library
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from constants import MAX_AMOUNT, MIN_AMOUNT
-from utils import set_recipe_ingredient, set_recipe_tag
 
 # Local Imports
-from .fields import Hex2NameColorField
+from .fields import Hex2NameColorField, Base64ImageField
 from recipes.models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
 from users.serializers import UserSerializer
 
 User = get_user_model()
-
-
-class Base64ImageField(serializers.ImageField):
-    """
-    A custom serializer field for handling base64 encoded images.
-
-    This field is used to validate and convert base64 encoded image strings to
-    Django ContentFile objects.
-    """
-
-    def to_internal_value(self, data: str) -> ContentFile:
-        """
-        Validate and convert the input data to the internal value.
-
-        Parameters
-        ----------
-        data : str
-            The input data to validate and convert.
-
-        Returns
-        -------
-        ContentFile
-            The converted internal value.
-
-        Raises
-        ------
-        serializers.ValidationError
-            If the input data is not a valid base64 encoded image.
-        """
-        if isinstance(data, str) and data.startswith('data:image'):
-            format, imgstr = data.split(';base64,')
-            ext = format.split('/')[-1]
-            data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
-
-        return super().to_internal_value(data)
 
 
 class IngredientSerializer(serializers.ModelSerializer):
@@ -153,8 +115,7 @@ class AbstractRecipeSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = '__all__'
 
-    @staticmethod
-    def get_image_url(obj: Recipe) -> Union[str, None]:
+    def get_image_url(self, obj: Recipe) -> Union[str, None]:
         """
         Get the URL of the recipe's image.
 
@@ -355,9 +316,9 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         ingredients: dict = validated_data.pop('ingredients')
         recipe: Recipe = super().create(validated_data)
 
-        set_recipe_tag(recipe, tags)
+        self.set_recipe_tag(recipe, tags)
 
-        set_recipe_ingredient(recipe, ingredients)
+        self.set_recipe_ingredient(recipe, ingredients)
 
         return recipe
 
@@ -387,11 +348,11 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
         ingredients: dict = validated_data.pop('ingredients')
         RecipeIngredient.objects.filter(recipe=instance).delete()
-        set_recipe_ingredient(instance, ingredients)
+        self.set_recipe_ingredient(instance, ingredients)
 
         tags: list = validated_data.pop('tags')
         RecipeTag.objects.filter(recipe=instance).delete()
-        set_recipe_tag(instance, tags)
+        self.set_recipe_tag(instance, tags)
 
         instance.save()
         return instance
@@ -412,8 +373,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         """
         return RecipeReadSerializer(instance).data
 
-    @staticmethod
-    def validate_ingredients(value: list) -> list:
+    def validate_ingredients(self, value: list) -> list:
         """
         Validate the ingredients field.
         This method checks that the ingredients field is not empty and that
@@ -449,8 +409,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
         return value
 
-    @staticmethod
-    def validate_tags(value: list) -> list:
+    def validate_tags(self, value: list) -> list:
         """
         Validate the tags field.
         This method checks that the tags field is not empty and that each tag
@@ -483,3 +442,19 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             )
 
         return value
+
+    def set_recipe_tag(self, recipe, tags):
+        recipe_tag = [RecipeTag(tag=tag, recipe=recipe) for tag in tags]
+        RecipeTag.objects.bulk_create(recipe_tag)
+
+    def set_recipe_ingredient(self, recipe, ingredients):
+        recipe_ingredient = [
+            RecipeIngredient(
+                recipe=recipe,
+                ingredient=ingredient.get('id'),
+                amount=ingredient.get('amount'),
+            ) for ingredient in ingredients
+        ]
+        # Sorting by name
+        recipe_ingredient.sort(key=lambda x: x.ingredient.name)
+        RecipeIngredient.objects.bulk_create(recipe_ingredient)

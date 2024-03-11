@@ -1,3 +1,6 @@
+from http import HTTPStatus
+from typing import Any, Optional
+
 # Django Library
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
@@ -16,7 +19,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 
-from utils import check_favorite_or_cart, uncheck_favorite_or_cart
+from utils import get_recipe_or_error, check_field_in_user_recipe, uncheck_field_in_user_recipe
 
 # Local Imports
 from .filters import NameSearchFilter, RecipeFilter
@@ -27,6 +30,7 @@ from .serializers import (
     IngredientSerializer,
     RecipeReadSerializer,
     RecipeWriteSerializer,
+    ShortenedRecipeSerializer,
     TagSerializer,
 )
 from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
@@ -87,6 +91,53 @@ class RecipeViewSet(
         """
         serializer.save(author=self.request.user)
 
+    def check_favorite_or_cart(
+            self,
+            pk: Any,
+            request: Request,
+            is_favorited: bool = None,
+            is_in_shopping_cart: bool = None,
+    ):
+        recipe, error = get_recipe_or_error(pk, HTTPStatus.BAD_REQUEST)
+        # type: Optional[Recipe], Optional[Response]
+        if error:
+            return error
+        errors: Optional[Response] = check_field_in_user_recipe(
+            request.user,
+            recipe,
+            is_favorited,
+            is_in_shopping_cart,
+        )
+        if errors:
+            return errors
+        return Response(
+            ShortenedRecipeSerializer(recipe).data,
+            status=HTTPStatus.CREATED,
+        )
+
+    def uncheck_favorite_or_cart(
+            self,
+            pk: Any,
+            request,
+            from_favorited=None,
+            from_shopping_cart=None,
+    ):
+        recipe, error = get_recipe_or_error(pk)
+        # type: Optional[Recipe], Optional[Response]
+        if error:
+            return error
+
+        errors: Optional[Response] = uncheck_field_in_user_recipe(
+            request.user,
+            recipe,
+            from_favorited,
+            from_shopping_cart,
+        )
+        if errors:
+            return errors
+
+        return Response(status=HTTPStatus.NO_CONTENT)
+
     @action(
         methods=('post',),
         detail=True,
@@ -97,7 +148,7 @@ class RecipeViewSet(
             request: Request,
             pk: int = None,
     ) -> Response:
-        return check_favorite_or_cart(pk, request, is_favorited=True)
+        return self.check_favorite_or_cart(pk, request, is_favorited=True)
 
     @favorite.mapping.delete
     def favorite_delete(
@@ -105,7 +156,7 @@ class RecipeViewSet(
             request: Request,
             pk: int = None,
     ) -> Response:
-        return uncheck_favorite_or_cart(pk, request, from_favorited=True)
+        return self.uncheck_favorite_or_cart(pk, request, from_favorited=True)
 
     @action(
         methods=('post',),
@@ -117,7 +168,7 @@ class RecipeViewSet(
             request: Request,
             pk: int = None,
     ) -> Response:
-        return check_favorite_or_cart(pk, request, is_in_shopping_cart=True)
+        return self.check_favorite_or_cart(pk, request, is_in_shopping_cart=True)
 
     @action(
         methods=('get',),
@@ -163,7 +214,7 @@ class RecipeViewSet(
             request: Request,
             pk: int = None,
     ) -> Response:
-        return uncheck_favorite_or_cart(pk, request, from_shopping_cart=True)
+        return self.uncheck_favorite_or_cart(pk, request, from_shopping_cart=True)
 
 
 class TagViewSet(ReadOnlyModelViewSet):

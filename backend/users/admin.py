@@ -63,7 +63,8 @@ class UserAdmin(UserAdmin):
 
     @admin.display(description='Кол-во подписок')
     def count_subscriptions(self, obj):
-        return Subscriptions.objects.filter(subscriber=obj.id).count()
+        # return Subscriptions.objects.filter(subscriber=obj.id).count()
+        return obj.subscriptions.count()
 
     @admin.display(description='Рецептов в избранном')
     def count_favorites(self, obj):
@@ -71,10 +72,11 @@ class UserAdmin(UserAdmin):
             user=obj.id,
             is_favorited=True,
         ).count()
+        # return obj.favourites.count()
 
     @admin.display(description='Своих рецептов в базе')
     def count_recipes(self, obj):
-        return Recipe.objects.filter(author=obj.id).count()
+        return obj.recipes.count()
 
 
 @admin.register(Subscriptions)

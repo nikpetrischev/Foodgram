@@ -1,9 +1,5 @@
-# Standard Library
-from typing import Any
-
 # Django Library
 from django_filters import rest_framework as drf_filters
-from django_filters.fields import MultipleChoiceField
 
 # Local Imports
 from recipes.models import Ingredient, Recipe
@@ -12,36 +8,6 @@ FLAG_CHOICES = (
     (0, False),
     (1, True),
 )
-
-
-class MultipleCharField(MultipleChoiceField):
-    """
-    A custom field for handling multiple choices in a filter.
-
-    This class overrides the validate method
-    to ensure custom validation logic can be applied.
-    """
-    def validate(self, value: Any) -> None:
-        """
-        Placeholder for validation logic.
-
-        Args:
-            value (Any): The value to validate.
-
-        Raises:
-            NotImplementedError: This method is not implemented.
-        """
-        pass
-
-
-class MultipleCharFilter(drf_filters.MultipleChoiceFilter):
-    """
-    A filter for handling multiple character choices in a filter set.
-
-    This class sets the field_class to MultipleCharField,
-    allowing for multiple character choices.
-    """
-    field_class = MultipleCharField
 
 
 class RecipeFilter(drf_filters.FilterSet):
@@ -56,10 +22,12 @@ class RecipeFilter(drf_filters.FilterSet):
     is_favorited = drf_filters.ChoiceFilter(
         field_name='userrecipe__is_favorited',
         choices=FLAG_CHOICES,
+        method='check_favorite_or_cart',
     )
     is_in_shopping_cart = drf_filters.ChoiceFilter(
         field_name='userrecipe__is_in_shopping_cart',
         choices=FLAG_CHOICES,
+        method='check_favorite_or_cart',
     )
 
     class Meta:
@@ -70,6 +38,16 @@ class RecipeFilter(drf_filters.FilterSet):
             'is_favorited',
             'is_in_shopping_cart',
         )
+
+    def check_favorite_or_cart(self, queryset, name, value):
+        if self.request.user.is_authenticated:
+            return queryset.filter(
+                **{
+                    'userrecipe__user': self.request.user,
+                    name: value,
+                },
+            )
+        return queryset.filter(**{name: value})
 
 
 class NameSearchFilter(drf_filters.FilterSet):
