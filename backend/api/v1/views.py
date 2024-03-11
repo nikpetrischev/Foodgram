@@ -1,3 +1,4 @@
+# Standard Library
 from http import HTTPStatus
 from typing import Any, Optional
 
@@ -19,7 +20,11 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 
-from utils import get_recipe_or_error, check_field_in_user_recipe, uncheck_field_in_user_recipe
+from utils import (
+    check_field_in_user_recipe,
+    get_recipe_or_error,
+    uncheck_field_in_user_recipe,
+)
 
 # Local Imports
 from .filters import NameSearchFilter, RecipeFilter
@@ -168,7 +173,11 @@ class RecipeViewSet(
             request: Request,
             pk: int = None,
     ) -> Response:
-        return self.check_favorite_or_cart(pk, request, is_in_shopping_cart=True)
+        return self.check_favorite_or_cart(
+            pk,
+            request,
+            is_in_shopping_cart=True,
+        )
 
     @action(
         methods=('get',),
@@ -214,7 +223,11 @@ class RecipeViewSet(
             request: Request,
             pk: int = None,
     ) -> Response:
-        return self.uncheck_favorite_or_cart(pk, request, from_shopping_cart=True)
+        return self.uncheck_favorite_or_cart(
+            pk,
+            request,
+            from_shopping_cart=True,
+        )
 
 
 class TagViewSet(ReadOnlyModelViewSet):

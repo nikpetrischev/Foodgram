@@ -8,7 +8,7 @@ from rest_framework.authtoken.models import TokenProxy
 
 # Local Imports
 from .models import CustomUser, Subscriptions
-from recipes.models import Recipe, UserRecipe
+from recipes.models import UserRecipe
 
 admin.site.unregister(Group)
 admin.site.unregister(TokenProxy)

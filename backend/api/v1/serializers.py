@@ -12,7 +12,7 @@ from rest_framework.validators import UniqueValidator
 from constants import MAX_AMOUNT, MIN_AMOUNT
 
 # Local Imports
-from .fields import Hex2NameColorField, Base64ImageField
+from .fields import Base64ImageField, Hex2NameColorField
 from recipes.models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
 from users.serializers import UserSerializer
 

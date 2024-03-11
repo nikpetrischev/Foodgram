@@ -1,7 +1,10 @@
-# DRF Library
+# Standard Library
 import base64
 
+# Django Library
 from django.core.files.base import ContentFile
+
+# DRF Library
 from rest_framework import serializers
 
 import webcolors
@@ -28,11 +31,6 @@ class Hex2NameColorField(serializers.Field):
         -------
         str
             The color name corresponding to the hex color code.
-
-        Raises
-        ------
-        serializers.ValidationError
-            If the hex color code cannot be converted to a color name.
         """
         try:
             return webcolors.hex_to_name(value)
