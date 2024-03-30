@@ -91,9 +91,3 @@ git clone git@github.com:nikpetrischev/foodgram-project-react.git
   cd <ваш_путь_к_файлу_docker-comp[ose.yml>
   sudo docker compose exec backend python manage.py createsuperuser
   ```
-
-## Проект в интернете
-Проект запущен и доступен по [адресу](https://foodgram-diploma.myddns.me/)
-### Для ревьюера
-admin login: nikolai\
-admin pass: 19Caine89
